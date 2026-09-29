@@ -1,0 +1,237 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>__TITLE__</title>
+<style>
+:root{
+  color-scheme:light dark;
+  --bg:#ffffff; --bg2:#f5f6f8; --card:#ffffff; --fg:#1b1f24; --muted:#5b6470;
+  --dim:#8a93a0; --line:#e3e6ea; --line2:#cfd5dd; --accent:#1f6feb; --row-hover:#f2f5f9;
+  --todo:#1f6feb; --doing:#b26a00; --waiting:#0a7ea4; --blocked:#c0392b;
+  --backlog:#5b6470; --done:#1a7f37; --forbidden:#8e44ad; --unknown:#8a6d00;
+  --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,"Liberation Mono",monospace;
+  --sans:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+}
+@media (prefers-color-scheme:dark){
+:root{
+  --bg:#0e1116; --bg2:#151a21; --card:#12171d; --fg:#e6edf3; --muted:#9aa4b2;
+  --dim:#6e7681; --line:#232c36; --line2:#33404e; --accent:#58a6ff; --row-hover:#161d26;
+  --todo:#58a6ff; --doing:#d29922; --waiting:#39c5cf; --blocked:#f85149;
+  --backlog:#9aa4b2; --done:#3fb950; --forbidden:#bc8cff; --unknown:#d29922;
+}
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{background:var(--bg);color:var(--fg);font:14px/1.5 var(--sans);padding:0 14px 48px}
+@media (min-width:900px){body{padding:0 24px 64px}}
+a{color:var(--accent)}
+code{font-family:var(--mono)}
+.mono{font-family:var(--mono)}
+header.top{position:sticky;top:0;z-index:5;background:var(--bg);border-bottom:1px solid var(--line);padding:14px 0 0;display:flex;flex-wrap:wrap;gap:10px;align-items:baseline}
+header.top h1{font-size:16px;margin:0;font-weight:650}
+header.top .meta{color:var(--muted);font-size:12px;overflow-wrap:anywhere}
+.tabs{display:flex;flex-wrap:wrap;gap:4px;margin-left:auto;padding-bottom:10px}
+.tabs button{font:inherit;font-size:13px;background:none;border:1px solid transparent;color:var(--muted);padding:4px 10px;border-radius:6px;cursor:pointer}
+.tabs button.on{background:var(--bg2);color:var(--fg);border-color:var(--line2)}
+.toolbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:12px 0}
+.toolbar input[type=search]{font:inherit;min-width:180px;flex:1 1 220px;padding:6px 10px;border:1px solid var(--line2);border-radius:6px;background:var(--card);color:var(--fg)}
+.toolbar select{font:inherit;padding:6px 8px;border:1px solid var(--line2);border-radius:6px;background:var(--card);color:var(--fg);max-width:100%}
+.counts{display:flex;flex-wrap:wrap;gap:6px}
+.pill{font-size:11px;padding:2px 8px;border-radius:999px;border:1px solid var(--line2);color:var(--muted)}
+.pill b{color:var(--fg)}
+.pill.s-todo b{color:var(--todo)}.pill.s-doing b{color:var(--doing)}.pill.s-waiting b{color:var(--waiting)}
+.pill.s-blocked b{color:var(--blocked)}.pill.s-backlog b{color:var(--backlog)}.pill.s-done b{color:var(--done)}
+.pill.s-forbidden b{color:var(--forbidden)}.pill.s-unknown b{color:var(--unknown)}
+.board{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px;align-items:start}
+.col{background:var(--bg2);border:1px solid var(--line);border-radius:10px;padding:10px;min-height:80px}
+.col h2{font-size:11px;letter-spacing:.08em;text-transform:uppercase;margin:2px 4px 10px;color:var(--muted);display:flex;justify-content:space-between;gap:8px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:9px 11px;margin-bottom:8px;cursor:pointer}
+.card:hover{border-color:var(--line2)}
+.card.open{border-color:var(--accent)}
+.card .top{display:flex;flex-wrap:wrap;gap:8px;align-items:center;font-size:11px;color:var(--dim);margin-bottom:4px}
+.card .top .id{color:var(--accent);font-weight:650;font-family:var(--mono)}
+.card .top .pri{margin-left:auto;font-weight:650}
+.card .title{font-weight:500;line-height:1.35;overflow-wrap:anywhere}
+.card .tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;font-size:11px;color:var(--muted)}
+.card .tags span{background:var(--bg2);padding:1px 6px;border-radius:999px;overflow-wrap:anywhere}
+.card .tags .blk{color:var(--blocked)}
+.detail{display:none;margin-top:9px;padding-top:9px;border-top:1px dashed var(--line);font-size:12px}
+.card.open .detail{display:block}
+.detail dt{font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--dim);margin-top:8px}
+.detail dd{margin:2px 0 0;white-space:pre-wrap;overflow-wrap:anywhere}
+.detail dd.meta{font-size:11px;color:var(--dim)}
+.cmds{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.cmds button{font:11px var(--mono);padding:3px 8px;border:1px solid var(--line2);background:var(--bg2);color:var(--fg);border-radius:6px;cursor:pointer}
+.cmds button:hover{border-color:var(--accent);color:var(--accent)}
+.wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{text-align:left;padding:7px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);cursor:pointer;user-select:none;white-space:nowrap}
+th.sorted::after{content:" \25BE";color:var(--accent)}
+tr:hover td{background:var(--row-hover)}
+td.id{color:var(--accent);font-weight:650;white-space:nowrap;font-family:var(--mono)}
+td.mono{color:var(--muted);white-space:nowrap;font-family:var(--mono)}
+.st-doing{color:var(--doing)}.st-todo{color:var(--todo)}.st-waiting{color:var(--waiting)}.st-blocked{color:var(--blocked)}
+.st-backlog{color:var(--backlog)}.st-done{color:var(--done)}.st-forbidden{color:var(--forbidden)}.st-unknown{color:var(--unknown)}
+.st-DUE,.st-NEW{color:var(--doing)}.st-OK{color:var(--dim)}
+td.do{max-width:460px;color:var(--muted)}
+.empty{color:var(--dim);font-size:12px;padding:6px}
+.day{margin:16px 0}
+.day h3{font-size:13px;color:var(--accent);margin:0 0 6px;overflow-wrap:anywhere}
+.day ul{list-style:none;margin:0;padding:0}
+.day li{padding:4px 0;border-bottom:1px dotted var(--line);color:var(--muted);overflow-wrap:anywhere}
+.day li .k{display:inline-block;min-width:64px;color:var(--dim);font-size:11px}
+.day li .id{color:var(--accent)}
+.day li .ev{display:block;color:var(--dim);font-size:11px;margin-left:70px;white-space:pre-wrap;overflow-wrap:anywhere}
+.hidden{display:none}
+footer{margin-top:28px;color:var(--dim);font-size:11px;border-top:1px solid var(--line);padding-top:12px}
+</style>
+</head>
+<body>
+<header class="top">
+  <h1 id="h1"></h1>
+  <span class="meta" id="meta"></span>
+  <nav class="tabs" id="tabs">
+    <button data-view="kanban" class="on">Kanban</button>
+    <button data-view="table">Table</button>
+    <button data-view="recurring">Recurring</button>
+    <button data-view="archive">Archive</button>
+    <button data-view="journal">Journal</button>
+  </nav>
+</header>
+<div class="toolbar">
+  <input id="q" type="search" placeholder="search id / title / do / area / path">
+  <select id="fModel" aria-label="filter by model"><option value="">model: all</option></select>
+  <select id="fArea" aria-label="filter by area"><option value="">area: all</option></select>
+  <select id="fExec" aria-label="filter by exec"><option value="">exec: all</option></select>
+  <div class="counts" id="counts"></div>
+</div>
+<main>
+<section id="kanban" class="board"></section>
+<section id="table" class="wrap hidden"><table><thead><tr>
+  <th data-k="id">id</th><th data-k="eff">status</th><th data-k="priority">pri</th><th data-k="title">title</th>
+  <th data-k="model">model</th><th data-k="exec">exec</th><th data-k="area">area</th><th data-k="path">path</th>
+  <th data-k="deps">deps</th><th data-k="age">age</th><th>do</th>
+</tr></thead><tbody></tbody></table></section>
+<section id="recurring" class="wrap hidden"><table><thead><tr><th>id</th><th>state</th><th>every</th><th>last done</th><th>title</th><th>exec</th></tr></thead><tbody></tbody></table></section>
+<section id="archive" class="wrap hidden"><table><thead><tr><th>id</th><th>title</th><th>area</th><th>evidence</th></tr></thead><tbody></tbody></table></section>
+<section id="journal" class="hidden"></section>
+</main>
+<footer>Read-only snapshot of the TaskBoard board · regenerate with <code>/cyberine-taskboard:tasks board</code> · every mutation goes through a <code>/cyberine-taskboard:tasks</code> command.</footer>
+<script id="board-data" type="application/json">__DATA__</script>
+<script>
+"use strict";
+const D = JSON.parse(document.getElementById("board-data").textContent);
+const tasks = D.tasks || [], recurring = D.recurring || [], archive = D.archive || [], journal = D.journal || [];
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const has = (field, v) => String(field || "").split(/[,\s]+/).filter(Boolean).includes(v);
+document.getElementById("h1").textContent = D.meta.repo + " · task board";
+document.getElementById("meta").textContent = tasks.length + " tasks · generated " + D.meta.generated + " · " + D.meta.manifest;
+for (const pair of [["fModel","model"],["fArea","area"],["fExec","exec"]]) {
+  const s = document.getElementById(pair[0]);
+  const vals = [];
+  for (const t of tasks) {
+    for (const v of String(t[pair[1]] || "").split(/[,\s]+/)) if (v && vals.indexOf(v) === -1) vals.push(v);
+  }
+  vals.sort();
+  for (const v of vals) s.append(new Option(v, v));
+}
+const state = { q: "", model: "", area: "", exec: "", sort: "priority" };
+function visible() {
+  const q = state.q.toLowerCase();
+  return tasks.filter(t =>
+    (!state.model || t.model === state.model) &&
+    (!state.exec || t.exec === state.exec) &&
+    (!state.area || has(t.area, state.area)) &&
+    (!q || [t.id, t.title, t.do, t.area, t.path, t.why, t.doneWhen, t.reason].join(" ").toLowerCase().includes(q)));
+}
+const PRI = { p0: 0, p1: 1, p2: 2, p3: 3 };
+const byPri = (a, b) => (PRI[a.priority] ?? 1) - (PRI[b.priority] ?? 1) || a.pos - b.pos;
+function card(t) {
+  const deps = t.deps.map(d => '<span>↳ ' + esc(d) + (t.unmet.includes(d) ? "" : " ✓") + '</span>').join("");
+  return '<div class="card" data-id="' + esc(t.id) + '">'
+    + '<div class="top"><span class="id">' + esc(t.id) + '</span><span>' + esc(t.model || "-") + "/" + esc(t.exec || "-") + '</span><span>' + (t.age == null ? "" : t.age + "d") + '</span><span class="pri">' + esc(t.priority || "p1") + '</span></div>'
+    + '<div class="title">' + esc(t.title) + '</div>'
+    + '<div class="tags">'
+      + (t.owner ? '<span>« ' + esc(t.owner) + ' »</span>' : "")
+      + (t.area ? '<span>' + esc(t.area) + '</span>' : "")
+      + (t.path ? '<span>' + esc(t.path) + '</span>' : "")
+      + deps
+      + (t.blocker ? '<span class="blk">⊘ ' + esc(t.blocker) + '</span>' : "")
+    + '</div>'
+    + '<div class="detail"><dl>'
+      + '<dt>do</dt><dd>' + esc(t.do) + '</dd>'
+      + (t.doneWhen ? '<dt>done-when</dt><dd>' + esc(t.doneWhen) + '</dd>' : "")
+      + (t.why ? '<dt>why</dt><dd>' + esc(t.why) + '</dd>' : "")
+      + (t.reason ? '<dt>reason</dt><dd>' + esc(t.reason) + '</dd>' : "")
+      + (t.attempts && t.attempts.length ? '<dt>attempts</dt><dd>' + t.attempts.map(esc).join("\n") + '</dd>' : "")
+      + (t.evidence ? '<dt>evidence</dt><dd>' + esc(t.evidence) + '</dd>' : "")
+      + '<dt>meta</dt><dd class="meta">created ' + esc(t.created || "?") + ' · by ' + esc(t.createdBy || "?") + ' · from ' + esc(t.from || "?") + (t.brief ? ' · brief ' + esc(t.brief) : "") + '</dd>'
+    + '</dl>'
+    + '<div class="cmds">' + ["doing","done","todo","backlog"].map(s => '<button data-cmd="/cyberine-taskboard:tasks status ' + s + ' ' + esc(t.id) + '">copy: ' + s + '</button>').join("") + '</div>'
+    + '</div></div>';
+}
+const COLS = [["doing","Doing"],["todo","Todo"],["waiting","Waiting on deps"],["blocked","Blocked"],["backlog","Backlog"],["done","Done"],["forbidden","Forbidden"],["unknown","Unknown"]];
+function renderKanban() {
+  const v = visible();
+  document.getElementById("kanban").innerHTML = COLS.filter(col => col[0] !== "done" && col[0] !== "forbidden" && col[0] !== "unknown" || v.some(t => t.eff === col[0])).map(col => {
+    const list = v.filter(t => t.eff === col[0]).sort(byPri);
+    return '<div class="col"><h2>' + col[1] + '<span>' + list.length + '</span></h2>' + (list.map(card).join("") || '<div class="empty">empty</div>') + '</div>';
+  }).join("");
+  const c = {};
+  for (const t of v) c[t.eff] = (c[t.eff] || 0) + 1;
+  document.getElementById("counts").innerHTML = ["doing","todo","waiting","blocked","backlog","done","forbidden","unknown"].filter(s => c[s]).map(s => '<span class="pill s-' + s + '"><b>' + c[s] + '</b> ' + s + '</span>').join("");
+}
+function renderTable() {
+  const k = state.sort;
+  const v = visible().sort(k === "priority" ? byPri : k === "age" ? (a, b) => (b.age ?? -1) - (a.age ?? -1) : (a, b) => String(a[k] ?? "").localeCompare(String(b[k] ?? "")));
+  document.querySelector("#table tbody").innerHTML = v.map(t => '<tr>'
+    + '<td class="id">' + esc(t.id) + '</td><td class="st st-' + esc(t.eff) + '">' + esc(t.eff) + '</td><td class="mono">' + esc(t.priority || "p1") + '</td><td>' + esc(t.title) + '</td>'
+    + '<td class="mono">' + esc(t.model || "-") + '</td><td class="mono">' + esc(t.exec || "-") + '</td><td class="mono">' + esc(t.area || "") + '</td><td class="mono">' + esc(t.path || "") + '</td>'
+    + '<td class="mono">' + (t.deps.map(esc).join(", ") || "-") + '</td><td class="mono">' + (t.age == null ? "" : t.age + "d") + '</td><td class="do">' + esc(t.do) + '</td></tr>').join("") || '<tr><td colspan="11" class="empty">no tasks</td></tr>';
+  document.querySelectorAll("#table th[data-k]").forEach(th => th.classList.toggle("sorted", th.dataset.k === k));
+}
+function renderRecurring() {
+  document.querySelector("#recurring tbody").innerHTML = recurring.map(r => '<tr><td class="id">' + esc(r.id) + '</td><td class="st st-' + esc(r.state) + '">' + esc(r.state) + '</td><td class="mono">' + esc(r.every) + '</td><td class="mono">' + esc(r.lastDone || "-") + '</td><td>' + esc(r.title) + '</td><td class="mono">' + esc(r.exec || "") + '</td></tr>').join("") || '<tr><td colspan="6" class="empty">no recurring tasks</td></tr>';
+}
+function renderArchive() {
+  document.querySelector("#archive tbody").innerHTML = archive.map(a => '<tr><td class="id">' + esc(a.id) + '</td><td>' + esc(a.title) + '</td><td class="mono">' + esc(a.area || "") + '</td><td style="white-space:normal">' + esc(a.evidence || "") + '</td></tr>').join("") || '<tr><td colspan="4" class="empty">archive empty</td></tr>';
+}
+function renderJournal() {
+  document.getElementById("journal").innerHTML = journal.map(d => '<div class="day"><h3>' + esc(d.date) + (d.title ? ' — ' + esc(d.title) : "") + '</h3><ul>' + d.events.map(e =>
+    '<li><span class="k ' + esc(e.kind) + '">' + esc(e.kind) + '</span>'
+    + (e.id ? '<span class="id">' + esc(e.id) + '</span> ' : "")
+    + esc(e.title || e.body || "")
+    + (e.by ? ' <span style="color:var(--dim)">· ' + esc(e.by) + '</span>' : "")
+    + (e.evidence ? '<span class="ev">' + esc(e.evidence) + '</span>' : "")
+    + '</li>').join("") + '</ul></div>').join("") || '<div class="empty">no journal days</div>';
+}
+function render() { renderKanban(); renderTable(); renderRecurring(); renderArchive(); renderJournal(); }
+document.getElementById("q").addEventListener("input", e => { state.q = e.target.value; render(); });
+document.getElementById("fModel").addEventListener("change", e => { state.model = e.target.value; render(); });
+document.getElementById("fArea").addEventListener("change", e => { state.area = e.target.value; render(); });
+document.getElementById("fExec").addEventListener("change", e => { state.exec = e.target.value; render(); });
+document.querySelectorAll("#tabs button").forEach(b => b.addEventListener("click", () => {
+  document.querySelectorAll("#tabs button").forEach(x => x.classList.toggle("on", x === b));
+  for (const v of ["kanban","table","recurring","archive","journal"]) document.getElementById(v).classList.toggle("hidden", v !== b.dataset.view);
+  try { localStorage.setItem("taskboard-board-view", b.dataset.view); } catch (err) {}
+}));
+document.querySelectorAll("#table th[data-k]").forEach(th => th.addEventListener("click", () => { state.sort = th.dataset.k; renderTable(); }));
+document.body.addEventListener("click", e => {
+  const btn = e.target.closest("button[data-cmd]");
+  if (btn) { try { if (navigator.clipboard) navigator.clipboard.writeText(btn.dataset.cmd); } catch (err) {} btn.textContent = "copied"; e.stopPropagation(); return; }
+  const c = e.target.closest(".card");
+  if (c) c.classList.toggle("open");
+});
+render();
+try {
+  const saved = localStorage.getItem("taskboard-board-view");
+  const b = saved && document.querySelector('#tabs button[data-view="' + saved + '"]');
+  if (b) b.click();
+} catch (err) {}
+</script>
+</body>
+</html>

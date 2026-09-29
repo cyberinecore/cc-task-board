@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-plugin.json",
+  "name": "cyberine-taskboard",
+  "displayName": "Cyberine TaskBoard",
+  "version": "0.1.0",
+  "description": "A backlog that outlives every Claude Code session: tasks live in a file in your repository, each new session opens with a banner of what is in progress, next and blocked, and a guard makes every change go through a zero-dependency CLI with locking and validation. Local only: no network, no keys, no cost.",
+  "author": {
+    "name": "Nia D Pham",
+    "email": "xinchao@nghia-pham.com"
+  },
+  "homepage": "https://github.com/cyberinecore/cc-task-board",
+  "repository": "https://github.com/cyberinecore/cc-task-board",
+  "privacyPolicyUrl": "https://github.com/cyberinecore/cc-task-board/blob/main/PRIVACY.md",
+  "license": "MIT",
+  "keywords": [
+    "tasks",
+    "backlog",
+    "todo",
+    "project-management",
+    "session-memory",
+    "hooks",
+    "planning",
+    "offline"
+  ]
+}

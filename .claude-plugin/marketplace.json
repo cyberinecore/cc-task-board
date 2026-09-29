@@ -1,0 +1,17 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "cyberine-taskboard",
+  "owner": {
+    "name": "Nia D Pham",
+    "email": "xinchao@nghia-pham.com"
+  },
+  "description": "A repository-stored task board for Claude Code that every session opens with.",
+  "plugins": [
+    {
+      "name": "cyberine-taskboard",
+      "source": "./",
+      "description": "Session-start board banner, a guard that routes every board edit through the CLI, and a tasks skill to save, pick, close and block work.",
+      "category": "productivity"
+    }
+  ]
+}
