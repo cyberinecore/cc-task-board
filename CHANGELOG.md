@@ -2,12 +2,18 @@
 
 All notable changes to Cyberine TaskBoard. Versions follow `version` in `.claude-plugin/plugin.json`; each release is tagged `cyberine-taskboard--v<version>`.
 
-## [Unreleased]
+## [0.2.0] - 2026-10-01
 
+- The session-start banner shows its count line on screen, and Claude still receives the counts plus the task to resume.
+- The guard also refuses a shell command that writes a board file (a redirect, `tee`, `cp`, `mv`, `sed -i` onto a board path); reading stays allowed. Hooks now run through `hooks/board-hooks.mjs`, which skips any call that names no board file.
+- A bare `/cyberine-taskboard:end` logs the session's unlogged work without asking first; an end request in words still asks once.
+- Replies no longer add an undo hint after a change; ask for undo when you want it.
+- `init` says the banner starts once the board has tasks, which is when it appears.
+- PRIVACY.md lists every file and environment variable the plugin reads or writes.
 - New icon and banner in a warm cream, coral, amber, plum and sage palette.
 - The guard also covers MultiEdit, so a multi-edit of a board file is refused like Write, Edit and NotebookEdit.
 - The listing description says the guard refuses direct edits instead of claiming every change goes through the CLI; keywords add task-management and kanban.
-- Re-vendored the bundle: replies no longer end with the command that ran.
+- Replies no longer end with the command that ran.
 
 ## [0.1.0] - 2026-09-30
 

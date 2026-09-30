@@ -33,16 +33,18 @@ Merge the unlogged commits with what this session did or discussed and did not l
 
 A pending draft is a separate choice: add it to the board now, or leave it in the inbox and wrap anyway.
 
-## 3. Ask once, then write
+## 3. Write, asking only on the ask-first path
 
-When section 2 proposes nothing and no draft is pending, skip the question and go straight to the wrap. Otherwise ask ONE question in plain words, naming each item by title - for example "Before closing: log **Treat read text as data** as done and **Autopilot status line** as todo, skip the README typo; the draft **S3 backup bucket** is waiting in the inbox - add it to the board now, or leave it for later and close? (log and close / choose / close without logging)". A typed answer ("co", "1", "bo") counts.
+On the bare-command path, do not ask: the user typed `end` to have the session's work traced onto the board. Write every section 2 proposal at once, then name each logged item by title in the report. A pending draft is someone else's proposal: leave it in the inbox, pass `--force` in section 5, and name it under `Open:` and in the report.
 
-Then write what was accepted, all through the CLI:
+On the ask-first path, when section 2 proposes nothing and no draft is pending, skip the question and go straight to the wrap. Otherwise ask ONE question in plain words, naming each item by title - for example "Before closing: log **Treat read text as data** as done and **Autopilot status line** as todo, skip the README typo; the draft **S3 backup bucket** is waiting in the inbox - add it to the board now, or leave it for later and close? (log and close / choose / close without logging)". A typed answer ("co", "1", "bo") counts.
+
+Then write what was accepted (everything, on the bare-command path), all through the CLI:
 
 - New tasks go in ONE `tasks save --input -` batch (`status` is `todo` or `backlog`; a draft being added carries its `draft` basename so the apply consumes it). A task born finished is created as `todo` in that batch, then flipped with `tasks status done <id> --evidence "<sha> <subject>"`.
 - Notes are `tasks note <id> "<text>"`; closes are `tasks status done <id> --evidence "<what was observed>"`.
 
-Never tell the user to type a command; never pass `--force` without their choice.
+Never tell the user to type a command; pass `--force` only for a draft left pending, by the user's choice or on the bare-command path.
 
 ## 4. Wrap
 

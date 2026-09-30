@@ -41,14 +41,44 @@ test('no top-level bin and no root CLAUDE.md', () => {
   assert.equal(existsSync(join(root, 'CLAUDE.md')), false);
 });
 
-test('hooks run the bundled CLI in exec form', () => {
+test('hooks run the bundled wrapper in exec form', () => {
   const hooks = readJson('hooks/hooks.json').hooks;
   const cmds = [...hooks.SessionStart, ...hooks.PreToolUse].flatMap((m) => m.hooks);
   for (const h of cmds) {
     assert.equal(h.command, 'node');
-    assert.equal(h.args[0], '${CLAUDE_PLUGIN_ROOT}/cli/tasks.mjs');
+    assert.equal(h.args[0], '${CLAUDE_PLUGIN_ROOT}/hooks/board-hooks.mjs');
   }
   assert.deepEqual(cmds.map((h) => h.args[1]).sort(), ['banner', 'guard']);
+});
+
+const wrapper = join(root, 'hooks', 'board-hooks.mjs');
+
+function hook(cwd, mode, payload, env = {}) {
+  return spawnSync(process.execPath, [wrapper, mode], { cwd, input: JSON.stringify(payload), encoding: 'utf8', env: { PATH: isolatedPath, HOME: isolatedHome, ...env } });
+}
+
+test('session start shows the count line on screen and the full banner as context', () => {
+  const dir = scratchRepo();
+  assert.equal(hook(dir, 'banner', { hook_event_name: 'SessionStart' }).stdout, '');
+  run(dir, ['init']);
+  run(dir, ['add', '--title', 'Ship it', '--do', 'Do it', '--done-when', 'Done', '--effort', 'S']);
+  const out = JSON.parse(hook(dir, 'banner', { hook_event_name: 'SessionStart' }).stdout);
+  assert.match(out.systemMessage, /^\[taskboard\] .*1 todo/);
+  assert.doesNotMatch(out.systemMessage, /→|ACTIVE\.md/);
+  assert.equal(out.hookSpecificOutput.hookEventName, 'SessionStart');
+  assert.match(out.hookSpecificOutput.additionalContext, /Resume: .*Ship it/);
+});
+
+test('guard refuses a Bash write to the board and passes reads', () => {
+  const dir = scratchRepo();
+  run(dir, ['init']);
+  const board = join('.local', 'tasks', 'ACTIVE.md');
+  const bash = (command) => hook(dir, 'guard', { tool_name: 'Bash', tool_input: { command }, cwd: dir }).status;
+  assert.equal(bash('echo x >> ' + board), 2);
+  assert.equal(bash('cat ' + board), 0);
+  assert.equal(bash('ls'), 0);
+  const multi = hook(dir, 'guard', { tool_name: 'MultiEdit', tool_input: { file_path: join(dir, board), edits: [] }, cwd: dir });
+  assert.equal(multi.status, 2);
 });
 
 test('every skill has a name and description', () => {
@@ -83,7 +113,7 @@ test('guard refuses a board edit and passes any other file', () => {
   const multi = JSON.stringify({ tool_name: 'MultiEdit', tool_input: { file_path: join(dir, '.local/tasks/ACTIVE.md'), edits: [] }, cwd: dir });
   assert.equal(run(dir, ['guard'], multi).status, 2);
   const matcher = readJson('hooks/hooks.json').hooks.PreToolUse[0].matcher.split('|');
-  for (const tool of ['Write', 'Edit', 'MultiEdit', 'NotebookEdit']) assert.ok(matcher.includes(tool), tool);
+  for (const tool of ['Write', 'Edit', 'MultiEdit', 'NotebookEdit', 'Bash']) assert.ok(matcher.includes(tool), tool);
 });
 
 const banned = new RegExp(['npm' + ' i ', 'npm' + ' install', '@' + 'cyberine/' + 'cli', 'full ' + 'cyberine'].join('|'), 'i');

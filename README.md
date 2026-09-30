@@ -62,14 +62,16 @@ The CLI can also be run directly: `node <plugin dir>/cli/tasks.mjs <subcommand>`
 
 | Piece | When | What it does |
 |---|---|---|
-| Banner (`SessionStart`) | startup, resume, `/clear`, compaction | prints one line with the board's counts and the task to resume; silent without a board |
-| Guard (`PreToolUse`) | every Write, Edit, MultiEdit and NotebookEdit | refuses the call when the target is a board file; silent for every other file |
+| Banner (`SessionStart`) | startup, resume, `/clear`, compaction | shows the board's counts on screen and gives Claude the counts plus the task to resume; silent without a board or while the board has no tasks |
+| Guard (`PreToolUse`) | every Write, Edit, MultiEdit, NotebookEdit and Bash call | refuses a direct edit of a board file or a shell command that writes one (reading is fine); silent for everything else |
 
-Both run `node` on the bundled CLI, take about 0.15 s, and never touch the network.
+Both run `node` on the bundled `hooks/board-hooks.mjs`, which calls the bundled CLI only when it matters (the guard skips any call that names no board file), and neither touches the network.
+
+Besides the board, the plugin runs `git` (repository root, ignore checks, and at wrap-up the recent commit messages and uncommitted paths) and `open` or `xdg-open` only when you ask for the board page with `--open`. It sends nothing anywhere. Every file and environment variable it reads or writes is listed in [PRIVACY.md](PRIVACY.md).
 
 ## Limits
 
-- The guard sees Write, Edit, MultiEdit and NotebookEdit. A board write through Bash, an MCP tool or a `!` command is not caught; the skill forbids those routes.
+- The guard sees Write, Edit, MultiEdit, NotebookEdit and Bash. A board write through an MCP tool, a `!` command, or a shell command it cannot parse as a write is not caught; the skill forbids those routes.
 - Without `node` on the hook `PATH`, or when a hook times out, the banner is silent and the guard does not run.
 - `TASKBOARD_ROOT=<dir>` pins the board to that directory instead of the repository root.
 - Journal entries record who made a change as `<user>@<pid>`.

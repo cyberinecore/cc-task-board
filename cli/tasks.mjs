@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 // <define:__TASKBOARD_BUILD__>
-var define_TASKBOARD_BUILD_default = { version: "0.2.0", source: "cd063c3a", program: "/cyberine-taskboard:tasks" };
+var define_TASKBOARD_BUILD_default = { version: "0.2.0", source: "4087f458", program: "/cyberine-taskboard:tasks" };
 
 // scripts/taskboard-bundle/entry.ts
 import { homedir } from "node:os";
@@ -256,7 +256,7 @@ function todayLocalDate() {
 
 // src/tasks/boardShare.ts
 import { execFileSync as execFileSync2 } from "node:child_process";
-import { appendFileSync as appendFileSync4, existsSync as existsSync12, mkdirSync as mkdirSync8, readFileSync as readFileSync11, renameSync as renameSync7, writeFileSync as writeFileSync8 } from "node:fs";
+import { appendFileSync as appendFileSync4, existsSync as existsSync12, lstatSync, mkdirSync as mkdirSync8, readFileSync as readFileSync11, realpathSync as realpathSync3, renameSync as renameSync7, unlinkSync as unlinkSync4, writeFileSync as writeFileSync8 } from "node:fs";
 import { basename as basename6, dirname as dirname7, join as join10 } from "node:path";
 
 // src/tasks/boardOverlay.ts
@@ -3400,8 +3400,42 @@ ${boardFormatLine()}
 
 `;
 }
+function isSymlink(path) {
+  try {
+    return lstatSync(path).isSymbolicLink();
+  } catch {
+    return false;
+  }
+}
+function manifestAliases(root) {
+  const present = manifestCandidates(root).filter((path) => existsSync12(path));
+  const aliases = /* @__PURE__ */ new Map();
+  for (const link of present.filter(isSymlink)) {
+    const real = realpathSync3(link);
+    const board = present.find((path) => path !== link && !isSymlink(path) && realpathSync3(path) === real);
+    if (board) aliases.set(link, board);
+  }
+  return aliases;
+}
 function existingManifests(root) {
-  return manifestCandidates(root).filter((path) => existsSync12(path));
+  const aliases = manifestAliases(root);
+  return manifestCandidates(root).filter((path) => existsSync12(path) && !aliases.has(path));
+}
+function isIgnored(root, path) {
+  try {
+    execFileSync2("git", ["-C", root, "check-ignore", "-q", "--", path], { stdio: "ignore" });
+    return true;
+  } catch {
+    return false;
+  }
+}
+function isTracked(root, path) {
+  try {
+    execFileSync2("git", ["-C", root, "ls-files", "--error-unmatch", "--", path], { stdio: "ignore" });
+    return true;
+  } catch {
+    return false;
+  }
 }
 function initBoard(root, args2) {
   if (args2.some((arg) => arg !== "--sync")) throw new BoardRejected("usage: /cyberine-taskboard:tasks init [--sync]");
@@ -3441,7 +3475,8 @@ function relocateBoard(root, args2) {
   const source = to === "sync" ? local : candidates.slice(0, 2).find((path) => existsSync12(path));
   const existing = existingManifests(root);
   if (existing.length > 1) throw new BoardRejected(`tasks relocate: multiple manifests exist (${existing.join(", ")}); refusing to merge boards`);
-  if (existsSync12(target)) return `already there: ${target}`;
+  const alias = source && manifestAliases(root).get(target) === source ? target : null;
+  if (existsSync12(target) && !alias) return `already there: ${target}`;
   if (!source || !existsSync12(source)) throw new BoardRejected("tasks relocate: no board on the source side; run /cyberine-taskboard:tasks init first");
   const paths = boardPathsFor(root);
   assertBoardWritable(paths.manifest);
@@ -3453,12 +3488,16 @@ function relocateBoard(root, args2) {
   const conflicts = moving.filter((name) => existsSync12(join10(into, name)));
   if (conflicts.length) throw new BoardRejected(`tasks relocate: target already contains ${conflicts.join(", ")}; refusing to overwrite`);
   const staying = STAYS.filter((name) => existsSync12(join10(from, name)));
-  if (dry) return [`plan: ${source} -> ${target}`, ...moving.map((name) => `  move: ${join10(from, name)} -> ${join10(into, name)}`), ...staying.map((name) => `  stay: ${join10(from, name)}`), ...to === "sync" ? rewriteGitignore(root, dir, true).map((line) => `  gitignore: ${line}`) : [], "dry run -- nothing written"].join("\n");
+  const unlinkLine = alias ? [`  unlink: ${alias} (a symlink to ${source}, not a second board)`] : [];
+  const trackedNote = to === "local" && isRepo(root) && isTracked(root, source) ? [`note: ${source} was tracked in git; after the move its files show as deleted there -- commit that removal to untrack the board`] : [];
+  if (dry) return [`plan: ${source} -> ${target}`, ...unlinkLine, ...moving.map((name) => `  move: ${join10(from, name)} -> ${join10(into, name)}`), ...staying.map((name) => `  stay: ${join10(from, name)}`), ...to === "sync" ? rewriteGitignore(root, dir, true).map((line) => `  gitignore: ${line}`) : [], ...trackedNote, "dry run -- nothing written"].join("\n");
   mkdirSync8(into, { recursive: true });
+  if (alias) unlinkSync4(alias);
   renameSync7(source, target);
   for (const name of moving) renameSync7(join10(from, name), join10(into, name));
   if (to === "sync") ensureGitFiles(root, true, dir);
-  return [`relocated: ${source} -> ${target}`, ...moving.map((name) => `  moved: ${name}`), ...staying.map((name) => `  left in place: ${name}`)].join("\n");
+  else if (isRepo(root) && !isIgnored(root, target)) ensureLine(join10(root, ".gitignore"), ".local/");
+  return [`relocated: ${source} -> ${target}`, ...alias ? [`  removed symlink: ${alias}`] : [], ...moving.map((name) => `  moved: ${name}`), ...staying.map((name) => `  left in place: ${name}`), ...trackedNote].join("\n");
 }
 
 // src/tasks/boardDoctor.ts
@@ -4009,7 +4048,7 @@ function describeDrop(r) {
 }
 
 // src/tasks/boardForget.ts
-import { existsSync as existsSync15, readFileSync as readFileSync14, readdirSync as readdirSync7, rmSync as rmSync2, unlinkSync as unlinkSync4 } from "node:fs";
+import { existsSync as existsSync15, readFileSync as readFileSync14, readdirSync as readdirSync7, rmSync as rmSync2, unlinkSync as unlinkSync5 } from "node:fs";
 import { join as join13 } from "node:path";
 var DAY_FILE_RE2 = /^\d{4}-\d{2}-\d{2}\.jsonl$/;
 function readIfExists(path) {
@@ -4100,7 +4139,7 @@ function rewriteJsonl(path, keep) {
   const lines = jsonlLines(path);
   const kept = lines.filter(keep);
   if (kept.length === lines.length) return;
-  if (kept.length === 0) unlinkSync4(path);
+  if (kept.length === 0) unlinkSync5(path);
   else writeFileAtomic(path, `${kept.map((l) => l.raw).join("\n")}
 `, "forget");
 }
@@ -7357,7 +7396,7 @@ async function cmdTasksBoard(argv) {
 }
 
 // src/tasks/boardYield.ts
-import { existsSync as existsSync26, readFileSync as readFileSync27, realpathSync as realpathSync3, statSync as statSync10 } from "node:fs";
+import { existsSync as existsSync26, readFileSync as readFileSync27, realpathSync as realpathSync4, statSync as statSync10 } from "node:fs";
 import { delimiter, dirname as dirname12, join as join18 } from "node:path";
 var BIG_PLUGIN_NAME = "cyberine";
 var BIG_PLUGIN_KEY_PREFIX = "cyberine@";
@@ -7383,7 +7422,7 @@ function readJson(file) {
 }
 function bigPluginLinked(home) {
   try {
-    const dir = realpathSync3(join18(home, ".claude", "skills", BIG_PLUGIN_NAME));
+    const dir = realpathSync4(join18(home, ".claude", "skills", BIG_PLUGIN_NAME));
     if (!statSync10(dir).isDirectory()) return false;
     const manifest = readJson(join18(dir, ".claude-plugin", "plugin.json"));
     return isRecord(manifest) && manifest.name === BIG_PLUGIN_NAME;
@@ -7416,7 +7455,7 @@ function bigPluginBinDir(env) {
     const candidate = join18(dir, BIG_PLUGIN_NAME);
     if (!existsSync26(candidate)) continue;
     try {
-      return dirname12(realpathSync3(candidate));
+      return dirname12(realpathSync4(candidate));
     } catch {
       return null;
     }

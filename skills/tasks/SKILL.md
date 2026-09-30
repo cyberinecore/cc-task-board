@@ -77,7 +77,7 @@ All-or-nothing: any error means nothing is written. Per task: a unique `ref`, a 
 
 Evidence is something this session OBSERVED: an exit code, a status code, a diff that applied, a line of real output. "Implemented as described", "should work now", or a worker's own summary of its own work are not evidence.
 
-- Observed: `tasks status done <id> --evidence "<what was observed, one line>"`, then say it is closed and that "reopen" puts it back.
+- Observed: `tasks status done <id> --evidence "<what was observed, one line>"`, then say it is closed.
 - Not observed: do not refuse, and do not write a claim as evidence. Ask once, with a picker when the host has one: **check first** (run the check, then close with what it showed), **close as unverified** (`tasks status done <id>` without `--evidence`, then `tasks note <id> "closed unverified: <what the user said>"`), or **not done yet**.
 
 ## Blocked versus waiting

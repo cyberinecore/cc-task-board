@@ -8,7 +8,7 @@
             "type": "command",
             "command": "node",
             "args": [
-              "${CLAUDE_PLUGIN_ROOT}/cli/tasks.mjs",
+              "${CLAUDE_PLUGIN_ROOT}/hooks/board-hooks.mjs",
               "banner"
             ],
             "timeout": 10
@@ -18,13 +18,13 @@
     ],
     "PreToolUse": [
       {
-        "matcher": "Write|Edit|MultiEdit|NotebookEdit",
+        "matcher": "Write|Edit|MultiEdit|NotebookEdit|Bash",
         "hooks": [
           {
             "type": "command",
             "command": "node",
             "args": [
-              "${CLAUDE_PLUGIN_ROOT}/cli/tasks.mjs",
+              "${CLAUDE_PLUGIN_ROOT}/hooks/board-hooks.mjs",
               "guard"
             ],
             "timeout": 10

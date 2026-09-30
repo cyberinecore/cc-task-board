@@ -11,8 +11,8 @@ Answer from this page; for anything that reads or changes the board, use `/cyber
 
 What it does: keeps a backlog in a file inside the repository, so it survives every Claude Code session.
 
-- **Banner (SessionStart hook).** On startup, resume, `/clear` and compaction, the plugin prints one line with the board's counts and the task to resume. In a repository without a board it prints nothing: a board is opt-in per repository.
-- **Guard (PreToolUse hook on Write, Edit, MultiEdit, NotebookEdit).** Refuses a direct edit of a board file, so every change goes through the CLI's lock, validation and header count.
+- **Banner (SessionStart hook).** On startup, resume, `/clear` and compaction, the plugin shows the board's counts on screen and gives Claude the counts plus the task to resume. In a repository without a board, or while the board has no tasks, it prints nothing: a board is opt-in per repository.
+- **Guard (PreToolUse hook on Write, Edit, MultiEdit, NotebookEdit, Bash).** Refuses a direct edit of a board file or a shell command that writes one, so every change goes through the CLI's lock, validation and header count.
 - **Commands.** Four, and everything else is said in plain words:
 
 | Command | Started by | For |
@@ -35,6 +35,6 @@ Turning it off: `/plugin` and disable `cyberine-taskboard` for everything; delet
 
 When another installed board plugin already shows this banner and guards these files, TaskBoard's banner and guard stay silent so each appears only once. `TASKBOARD_ROOT=<dir>` pins the board to another directory.
 
-Limits: the guard sees Write, Edit, MultiEdit and NotebookEdit only; a board write through Bash is not caught, which is why the skill forbids it. The plugin needs `node` 20 or newer on the PATH; without it the banner is silent and the guard does not run.
+Limits: the guard sees Write, Edit, MultiEdit, NotebookEdit and Bash; a board write through an MCP tool or a `!` command is not caught, which is why the skill forbids it. The plugin needs `node` 20 or newer on the PATH; without it the banner is silent and the guard does not run.
 
 Privacy: no network requests, no keys, nothing stored outside the repository (except a board page you write with `board --out`). It runs `git` to find the repository root, and `open` or `xdg-open` only when you pass `--open`.
