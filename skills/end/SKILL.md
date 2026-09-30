@@ -54,6 +54,6 @@ Run `tasks end`. It bakes pending status flips into the board, moves every finis
 
 ## 5. Report, then stop
 
-Report in the user's language, shortest first: what was logged, how many tasks were archived, anything still in progress (by title, asking whether each is really still going), what is blocked and on what, a draft left pending, and the one task a next session should pick up. Commands run go on one closing `ran:` line at most. Then stop: commit nothing.
+Report in the user's language, shortest first: what was logged, how many tasks were archived, anything still in progress (by title, asking whether each is really still going), what is blocked and on what, a draft left pending, and the one task a next session should pick up. Never list the commands that ran unless the user asks. Then stop: commit nothing.
 
 Never write to a board file by hand, and never drop a task from this command.

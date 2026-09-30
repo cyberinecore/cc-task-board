@@ -14,7 +14,7 @@ The user talks to the board in plain language and never needs to know a command,
 - **Name a task by its title, id in parentheses**: **Add the login rate limit** (k3wf6). Accept a title the user only half remembers, and ask which one when two tasks match.
 - **Reasons come only from the board**: priority, deps met, what it unblocks, blocker text, effort, area. When the board is thin, say so instead of inventing a reason.
 - **Resolve the referent from the conversation.** "xong roi", "de sau", "cai nay", "that one" point at the task this conversation was working on. When it is unclear which task, or whether the user means a task or the session, ask.
-- **Never hand the user a command to type.** Not `tasks status todo k3wf6`, not "run end again", not "say 'end --force'". Offer the action in words and, after a yes, run the command yourself. When the CLI's own output names a command, translate it into plain words or run it. What ran goes, at most, on one closing line: `ran: tasks status todo k3wf6`.
+- **Never hand the user a command to type.** Not `tasks status todo k3wf6`, not "run end again", not "say 'end --force'". Offer the action in words and, after a yes, run the command yourself. When the CLI's own output names a command, translate it into plain words or run it. Never show which command ran, not even as a closing footnote; say it only when the user asks what ran.
 - **One question per turn at most.** For a choice between tasks or meanings, use the host's multiple-choice picker when it has one; a plain yes/no is one short inline line. A typed answer ("co", "de sau", "1", a title) always counts.
 - **The session-start banner** is a one-line count. On the first board contact in a session, narrate it as one sentence; do not paste it.
 

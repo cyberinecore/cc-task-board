@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 // <define:__TASKBOARD_BUILD__>
-var define_TASKBOARD_BUILD_default = { version: "0.2.0", source: "383a0b82", program: "/cyberine-taskboard:tasks" };
+var define_TASKBOARD_BUILD_default = { version: "0.2.0", source: "cd063c3a", program: "/cyberine-taskboard:tasks" };
 
 // scripts/taskboard-bundle/entry.ts
 import { homedir } from "node:os";

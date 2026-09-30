@@ -2,6 +2,12 @@
 
 All notable changes to Cyberine TaskBoard. Versions follow `version` in `.claude-plugin/plugin.json`; each release is tagged `cyberine-taskboard--v<version>`.
 
+## [Unreleased]
+
+- The guard also covers MultiEdit, so a multi-edit of a board file is refused like Write, Edit and NotebookEdit.
+- The listing description says the guard refuses direct edits instead of claiming every change goes through the CLI; keywords add task-management and kanban.
+- Re-vendored the bundle: replies no longer end with the command that ran.
+
 ## [0.1.0] - 2026-09-30
 
 - SessionStart hook prints the board banner (counts and the task to resume) on startup, resume, clear and compact; silent in a repository without a board.

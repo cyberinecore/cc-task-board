@@ -3,7 +3,7 @@
   "name": "cyberine-taskboard",
   "displayName": "Cyberine TaskBoard",
   "version": "0.1.0",
-  "description": "A backlog that outlives every Claude Code session: tasks live in a file in your repository, each new session opens with a banner of what is in progress, next and blocked, and a guard makes every change go through a zero-dependency CLI with locking and validation. Local only: no network, no keys, no cost.",
+  "description": "A backlog that outlives every Claude Code session: tasks live in a file in your repository, every session opens with a banner of what is in progress, next and blocked, and a guard refuses direct edits so changes go through one zero-dependency, locking CLI. Local only: no network, no account, no API key.",
   "author": {
     "name": "Nia D Pham",
     "email": "xinchao@nghia-pham.com"
@@ -16,10 +16,10 @@
     "tasks",
     "backlog",
     "todo",
-    "project-management",
-    "session-memory",
-    "hooks",
+    "task-management",
     "planning",
+    "session-memory",
+    "kanban",
     "offline"
   ]
 }

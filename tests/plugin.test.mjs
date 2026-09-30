@@ -80,6 +80,10 @@ test('guard refuses a board edit and passes any other file', () => {
   assert.equal(refused.status, 2);
   assert.match(refused.stderr + refused.stdout, /\/cyberine-taskboard:tasks/);
   assert.equal(run(dir, ['guard'], payload('README.md')).status, 0);
+  const multi = JSON.stringify({ tool_name: 'MultiEdit', tool_input: { file_path: join(dir, '.local/tasks/ACTIVE.md'), edits: [] }, cwd: dir });
+  assert.equal(run(dir, ['guard'], multi).status, 2);
+  const matcher = readJson('hooks/hooks.json').hooks.PreToolUse[0].matcher.split('|');
+  for (const tool of ['Write', 'Edit', 'MultiEdit', 'NotebookEdit']) assert.ok(matcher.includes(tool), tool);
 });
 
 const banned = new RegExp(['npm' + ' i ', 'npm' + ' install', '@' + 'cyberine/' + 'cli', 'full ' + 'cyberine'].join('|'), 'i');
