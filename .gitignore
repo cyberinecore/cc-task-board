@@ -1,6 +1,4 @@
 .local/
-.envrc
-.cyberine/
 .playwright-mcp/
 /artifacts/
 CLAUDE.local.md
@@ -8,8 +6,6 @@ CLAUDE.local.md
 .claude/worktrees/
 .claude/scratch*/
 .claude/plans/
-.claude/rules/cyberine-autonomy.md
-.claude/rules/cyberine-board.md
 .claude/**/*.local*
 .claude/**/user-*
 .claude/**/private-*
@@ -24,6 +20,5 @@ desktop.ini
 .idea/
 *.log
 *.tmp
-*.tgz
 tmp/
 node_modules/

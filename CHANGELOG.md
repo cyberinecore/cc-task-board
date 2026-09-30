@@ -4,6 +4,7 @@ All notable changes to Cyberine TaskBoard. Versions follow `version` in `.claude
 
 ## [Unreleased]
 
+- New icon and banner in a warm cream, coral, amber, plum and sage palette.
 - The guard also covers MultiEdit, so a multi-edit of a board file is refused like Write, Edit and NotebookEdit.
 - The listing description says the guard refuses direct edits instead of claiming every change goes through the CLI; keywords add task-management and kanban.
 - Re-vendored the bundle: replies no longer end with the command that ran.
