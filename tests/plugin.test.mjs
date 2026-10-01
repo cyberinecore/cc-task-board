@@ -77,8 +77,193 @@ test('guard refuses a Bash write to the board and passes reads', () => {
   assert.equal(bash('echo x >> ' + board), 2);
   assert.equal(bash('cat ' + board), 0);
   assert.equal(bash('ls'), 0);
+  assert.equal(bash('cp notes/ACTIVE.md .local/tasks/'), 2);
+  assert.equal(bash('cd .local/tasks && echo x > ACTIVE.md'), 2);
+  assert.equal(bash('cp .local/tasks/ACTIVE.md backup/'), 0);
+  assert.equal(bash('git log -- .local/tasks/ACTIVE.md'), 0);
+  assert.equal(bash('cp -- .local/tasks/ACTIVE.md backup/ACTIVE.md'), 0);
+  assert.equal(bash('install -m 644 notes/ACTIVE.md .local/tasks/'), 2);
+  assert.equal(bash('rsync -a notes/ .local/tasks/'), 2);
+  assert.equal(bash('rm -rf .local/tasks'), 2);
+  assert.equal(bash('rm -rf node_modules && cat .local/tasks/ACTIVE.md'), 0);
   const multi = hook(dir, 'guard', { tool_name: 'MultiEdit', tool_input: { file_path: join(dir, board), edits: [] }, cwd: dir });
   assert.equal(multi.status, 2);
+});
+
+const winBoard = '.local\\tasks\\ACTIVE.md';
+const psRefused = [
+  `Set-Content -Path ${winBoard} -Value x`,
+  `Set-Content -LiteralPath '${winBoard}' -Value x`,
+  `sEt-CoNtEnT -Path:'${winBoard}' -Value x`,
+  `sc '${winBoard}' x`,
+  `Add-Content -LP '${winBoard}' x`,
+  `clc '${winBoard}'`,
+  `'x' | Out-File '${winBoard}'`,
+  `'x' | Tee-Object -FilePath '${winBoard}'`,
+  `'x' > '${winBoard}'`,
+  `'x' *>> '.local\\tasks\\status.log'`,
+  `Write-Error x 2> '.local\\tasks\\status.log'`,
+  `Set-Content -Path 'other.md','${winBoard}' -Value x`,
+  `Copy-Item -Path other.md '${winBoard}'`,
+  `Copy-Item other.md -Dest '${winBoard}'`,
+  `Move-Item '${winBoard}' backup.md`,
+  `Rename-Item '${winBoard}' backup.md`,
+  `New-Item -Path '.local\\tasks' -Name ACTIVE.md -ItemType File -Force`,
+  `Remove-Item .local/tasks/ACTIVE.md`,
+  `del ${winBoard}`,
+  `[IO.File]::WriteAllText('${winBoard}','x')`,
+  `[System.IO.File]::Copy('other.md','${winBoard}',$true)`,
+  `[IO.File]::Move('${winBoard}','backup.md')`,
+  `$w = [IO.StreamWriter]::new('${winBoard}'); $w.Close()`,
+  `(Get-Content '${winBoard}') -replace 'a','b' | Set-Content '${winBoard}'`,
+  `Microsoft.PowerShell.Management\\Set-Content '${winBoard}' x`,
+  `Set-Content '.claude\\TASKS.md' x`,
+  `Set-Content '.local\\tasks\\journal\\x.md' x`,
+  `node cli/tasks.mjs status > '${winBoard}'`,
+  `Set-Content '.LOCAL\\tasks\\active.md' x`,
+  `Set-Content '.local/tasks/../tasks/ACTIVE.md' x`,
+  `Set-Content 'FileSystem::${winBoard}' x`,
+  `$p = '${winBoard}'; Set-Content $p x`,
+  `Set-Content \`\n  -Path '${winBoard}' \`\n  -Value x`,
+  `cmd /c "type x > ${winBoard}"`,
+  `bash -c 'echo x >> .local/tasks/ACTIVE.md'`,
+  `pwsh -NoProfile -Command "Set-Content '${winBoard}' x"`,
+  `Invoke-WebRequest https://example.invalid -OutFile '${winBoard}'`,
+  `Set-Content -Verbose '${winBoard}' x`,
+  `Copy-Item -Debug notes.md '${winBoard}' -Force`,
+  `Set-Content -Path @('other.md','${winBoard}') -Value x`,
+  `Set-Content -Path 'other.md',\n '${winBoard}' -Value x`,
+  `Set-Content ('${winBoard}') x`,
+  `$item = New-Item -Path '${winBoard}' -ItemType File -Force`,
+  `$null = Set-Content -Path '${winBoard}' -Value x`,
+  `$p = '${winBoard}'; Set-Content $p x; $p = 'other.md'`,
+  `[string]$p = '${winBoard}'; Set-Content $p x`,
+  `\${p} = '${winBoard}'; Set-Content \${p} x`,
+  `$c = 'Set-Content ${winBoard} x'; Invoke-Expression $c`,
+  `Copy-Item 'notes\\ACTIVE.md' '.local\\tasks\\' -Force`,
+  `Set-Location .local\\tasks; Set-Content ACTIVE.md x`,
+  `([IO.FileInfo]::new('${winBoard}')).Delete()`,
+  `Set-Alias save Set-Content; save '${winBoard}' x`,
+  `Remove-Item '.local\\tasks' -Recurse -Force`,
+  `Remove-Item .local -Recurse -Force`,
+  `Rename-Item .local\\tasks old`,
+  `$o = @{Path='${winBoard}';Value='x'}; Set-Content @o`,
+  `Set-Content (Join-Path .local tasks ACTIVE.md) x`,
+  `$p = Join-Path '.local\\tasks' 'ACTIVE.md'; Set-Content $p x`,
+  `$p = '.local\\tasks'; Set-Content (Join-Path $p 'ACTIVE.md') x`,
+  `Set-Content (Join-Path '.local' (Join-Path 'tasks' 'ACTIVE.md')) x`,
+  `Set-Content (Join-Path '.local\\tasks' 'ACTIVE.md' -Resolve) x`,
+  `[IO.File]::WriteAllText((Join-Path '.local\\tasks' 'ACTIVE.md'),'x')`,
+  `$o=@{Path='${winBoard}';Value='x'}; Set-Content @o; $o=@{Path='other.md';Value='x'}`,
+  `$o=@{Path='other.md';Value='x'}; $o.Path='${winBoard}'; Set-Content @o`,
+  `$o=@('${winBoard}','x'); Set-Content @o`,
+  `$p=@('other.md','${winBoard}'); Set-Content $p x`,
+  `Set-Content -Path '.local\\tasks\\*.md' -Value x`,
+  `Remove-Item -Path '.local\\*' -Recurse -Force`,
+  `Push-Location .local; Push-Location tasks; Pop-Location; Set-Content tasks\\ACTIVE.md x`,
+  `[IO.Directory]::Delete('.local\\tasks',$true)`,
+  `[IO.Directory]::Move('.local\\tasks','backup\\tasks')`,
+  `([IO.DirectoryInfo]::new('.local\\tasks')).Delete($true)`,
+  `$f=[IO.FileInfo]::new('${winBoard}'); $f.Delete()`,
+  `(New-Object IO.FileInfo '${winBoard}').Delete()`,
+  `([IO.FileInfo]'${winBoard}').Delete()`,
+  `([IO.FileInfo]::new('other.md')).CopyTo('${winBoard}',$true)`,
+  `$p='${winBoard}'; [IO.File]::WriteAllText("$p",'x')`,
+  `$p='${winBoard}'; Set-Content -Path:$p -Value x`,
+  `$p='${winBoard}'; 'x' | Out-File -FilePath:$p`,
+  `$c='Set-Content'; & $c '${winBoard}' x`,
+  `Write-Output "$(Set-Content '${winBoard}' x)"`,
+  `$s=@"\n$(Set-Content '${winBoard}' x)\n"@\nWrite-Output $s`,
+  `Set-Content ('.local\\tasks\\' + 'ACTIVE.md') x`,
+  `Set-Variable p '${winBoard}'; Set-Content $p x`,
+  `Get-Item '${winBoard}' | Remove-Item`,
+  `Get-Item '${winBoard}' | Set-Content -Value updated`,
+  `Get-Item '${winBoard}' | Move-Item -Destination backup\\`,
+  `Get-Item '${winBoard}' | Rename-Item -NewName old.md`,
+  `Get-ChildItem .local\\tasks -Filter '*.md' | Remove-Item`,
+  `[pscustomobject]@{LiteralPath='${winBoard}'} | Remove-Item`,
+  `$writer=New-Object System.IO.StreamWriter '${winBoard}'; $writer.WriteLine('x'); $writer.Dispose()`,
+  `Copy-Item seed\\tasks .local -Recurse -Force`,
+];
+const psPassed = [
+  `Get-Content '${winBoard}'`,
+  `Select-String -Path '${winBoard}' -Pattern todo`,
+  `Copy-Item '${winBoard}' backup.md`,
+  `Get-Content '${winBoard}' | Set-Content other.md`,
+  `Set-Content other.md -Value '.local/tasks/ACTIVE.md'`,
+  `[IO.File]::Copy('${winBoard}','backup.md',$true)`,
+  `[IO.File]::ReadAllText('${winBoard}')`,
+  `[IO.File]::WriteAllText('other.md','.local/tasks/ACTIVE.md')`,
+  `Write-Output 'Set-Content ${winBoard} x'`,
+  `Write-Error x 2>&1`,
+  `node cli/tasks.mjs status`,
+  `'x' | Tee-Object -Variable v; Get-Content '${winBoard}'`,
+  `# Set-Content '${winBoard}' x\nGet-Content '${winBoard}'`,
+  `$s = @'\nSet-Content ${winBoard} x\n'@\nWrite-Output $s`,
+  `$p = 'other.md'; Set-Content $p x; $p = '${winBoard}'`,
+  `$p = '${winBoard}'; Set-Content '$p' x`,
+  `Write-Output "[IO.File]::WriteAllText('${winBoard}','x')"`,
+  `[IO.File]::Open('${winBoard}',[IO.FileMode]::Open,[IO.FileAccess]::Read).Dispose()`,
+  `([IO.FileInfo]::new('${winBoard}')).Length`,
+  `Set-Content '${winBoard}' x -WhatIf`,
+  `Copy-Item '${winBoard}' -Destination backup\\`,
+  `Remove-Item notes -Recurse -Force`,
+  `Get-ChildItem .local\\tasks -Recurse`,
+  `$o = @{LiteralPath='other.md';Value='x'}; Set-Content @o`,
+  `[IO.File]::Open('${winBoard}','Open','Read').Dispose()`,
+  `[IO.FileStream]::new('${winBoard}',[IO.FileMode]::Open,'Read').Dispose()`,
+  `Set-Content '${winBoard}' x -wi`,
+  `$WhatIfPreference=$true; Set-Content '${winBoard}' x`,
+  `$s = @"\nboard is at ${winBoard}\n"@; Write-Output $s`,
+  `Get-Content '${winBoard}' | Out-File $env:TEMP\\copy.md`,
+  `Copy-Item '${winBoard}' $env:TEMP`,
+  `foreach ($f in Get-ChildItem .local\\tasks) { Write-Output $f.Name }`,
+  `Get-Content '${winBoard}' | ForEach-Object { $_ } | Out-File -FilePath out\\copy.md`,
+  `'${winBoard}' | Set-Content -Value x`,
+  `Get-Content '${winBoard}'; $log=Join-Path $PWD 'build.log'; npm run build > $log`,
+  `Get-Content '${winBoard}'; $node=(Get-Command node).Source; & $node --version`,
+  `Copy-Item (Get-Item '${winBoard}').FullName backup\\ACTIVE.md`,
+  `Get-Content '${winBoard}'; Set-Content build-log 'ok'`,
+  `Copy-Item notes\\. .local\\tasks -Recurse -Force`,
+];
+
+test('guard refuses a PowerShell write to the board and passes reads', () => {
+  const dir = scratchRepo();
+  run(dir, ['init']);
+  mkdirSync(join(dir, 'seed', 'tasks'), { recursive: true });
+  mkdirSync(join(dir, 'notes'), { recursive: true });
+  const ps = (command) => hook(dir, 'guard', { tool_name: 'PowerShell', tool_input: { command }, cwd: dir });
+  for (const command of psRefused) {
+    const res = ps(command);
+    assert.equal(res.status, 2, command);
+    assert.match(res.stderr, /^PowerShell refused: /, command);
+    assert.match(res.stderr, /\/cyberine-taskboard:tasks/, command);
+  }
+  for (const command of psPassed) assert.equal(ps(command).status, 0, command);
+  assert.equal(readFileSync(join(dir, '.local', 'tasks', 'ACTIVE.md'), 'utf8').includes('\nx\n'), false);
+});
+
+test('guard refuses a board path that differs only in letter case', () => {
+  const dir = scratchRepo();
+  run(dir, ['init']);
+  const status = (tool_name, tool_input) => hook(dir, 'guard', { tool_name, tool_input, cwd: dir }).status;
+  assert.equal(status('Bash', { command: 'echo x >> .local/tasks/active.md' }), 2);
+  assert.equal(status('Write', { file_path: join(dir, '.local', 'tasks', 'active.md'), content: 'x' }), 2);
+  assert.equal(status('Edit', { file_path: join(dir, '.LOCAL', 'TASKS', 'ACTIVE.MD') }), 2);
+  assert.equal(status('Write', { file_path: join(dir, 'notes', 'active.md'), content: 'x' }), 0);
+  assert.equal(status('Write', { file_path: join(dir, '.local', 'tasks', '.', 'ACTIVE.md'), content: 'x' }), 2);
+  assert.equal(status('Write', { file_path: '.local/tasks/../tasks/ACTIVE.md', content: 'x' }), 2);
+});
+
+test('guard checks Monitor commands and skips WebSocket monitors', () => {
+  const dir = scratchRepo();
+  run(dir, ['init']);
+  const monitor = (tool_input) => hook(dir, 'guard', { tool_name: 'Monitor', tool_input: { description: 'd', timeout_ms: 1000, ...tool_input }, cwd: dir });
+  const refused = monitor({ command: 'echo x >> .local/tasks/ACTIVE.md' });
+  assert.equal(refused.status, 2);
+  assert.match(refused.stderr, /^Monitor refused: /);
+  assert.equal(monitor({ command: 'tail -f .local/tasks/ACTIVE.md' }).status, 0);
+  assert.equal(monitor({ ws: { url: 'wss://example.invalid/ACTIVE.md' } }).status, 0);
 });
 
 test('every skill has a name and description', () => {
@@ -113,7 +298,7 @@ test('guard refuses a board edit and passes any other file', () => {
   const multi = JSON.stringify({ tool_name: 'MultiEdit', tool_input: { file_path: join(dir, '.local/tasks/ACTIVE.md'), edits: [] }, cwd: dir });
   assert.equal(run(dir, ['guard'], multi).status, 2);
   const matcher = readJson('hooks/hooks.json').hooks.PreToolUse[0].matcher.split('|');
-  for (const tool of ['Write', 'Edit', 'MultiEdit', 'NotebookEdit', 'Bash']) assert.ok(matcher.includes(tool), tool);
+  for (const tool of ['Write', 'Edit', 'MultiEdit', 'NotebookEdit', 'Bash', 'PowerShell', 'Monitor']) assert.ok(matcher.includes(tool), tool);
 });
 
 const banned = new RegExp(['npm' + ' i ', 'npm' + ' install', '@' + 'cyberine/' + 'cli', 'full ' + 'cyberine'].join('|'), 'i');
@@ -151,6 +336,11 @@ test('banner and guard yield only when the other board plugin would run', () => 
   const enabledWithCli = { HOME: home, PATH: bin + ':' + isolatedPath };
   assert.equal(run(dir, ['banner'], '', enabledWithCli).stdout, '');
   assert.equal(run(dir, ['guard'], payload, enabledWithCli).status, 0);
+  assert.equal(hook(dir, 'guard', JSON.parse(payload), enabledWithCli).status, 0);
+  const ps = hook(dir, 'guard', { tool_name: 'PowerShell', tool_input: { command: `Set-Content '${winBoard}' x` }, cwd: dir }, enabledWithCli);
+  assert.equal(ps.status, 2);
+  const monitor = hook(dir, 'guard', { tool_name: 'Monitor', tool_input: { command: 'echo x >> .local/tasks/ACTIVE.md', description: 'd', timeout_ms: 1000 }, cwd: dir }, enabledWithCli);
+  assert.equal(monitor.status, 2);
 });
 
 test('every skill reads the one board-voice file', () => {

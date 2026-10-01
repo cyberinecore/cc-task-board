@@ -1,7 +1,7 @@
 {
   "name": "cyberine-taskboard",
   "displayName": "Cyberine TaskBoard",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "A backlog that outlives every Claude Code session: tasks live in a file in your repository, every session opens with a banner of what is in progress, next and blocked, and a guard refuses direct edits so changes go through one zero-dependency, locking CLI. Local only: no network, no account, no API key.",
   "author": {
     "name": "Nia D Pham",

@@ -63,7 +63,7 @@ The CLI can also be run directly: `node <plugin dir>/cli/tasks.mjs <subcommand>`
 | Piece | When | What it does |
 |---|---|---|
 | Banner (`SessionStart`) | startup, resume, `/clear`, compaction | shows the board's counts on screen and gives Claude the counts plus the task to resume; silent without a board or while the board has no tasks |
-| Guard (`PreToolUse`) | every Write, Edit, MultiEdit, NotebookEdit and Bash call | refuses a direct edit of a board file or a shell command that writes one (reading is fine); silent for everything else |
+| Guard (`PreToolUse`) | every Write, Edit, MultiEdit, NotebookEdit, Bash, PowerShell and Monitor call | refuses a direct edit of a board file or a shell or PowerShell command that writes one (reading is fine), including a path that differs only in letter case; silent for everything else |
 
 Both run `node` on the bundled `hooks/board-hooks.mjs`, which calls the bundled CLI only when it matters (the guard skips any call that names no board file), and neither touches the network.
 
@@ -71,12 +71,12 @@ Besides the board, the plugin runs `git` (repository root, ignore checks, and at
 
 ## Limits
 
-- The guard sees Write, Edit, MultiEdit, NotebookEdit and Bash. A board write through an MCP tool, a `!` command, or a shell command it cannot parse as a write is not caught; the skill forbids those routes.
+- The guard sees Write, Edit, MultiEdit, NotebookEdit, Bash, PowerShell and Monitor. A PowerShell or Monitor command that writes somewhere the guard cannot work out before it runs, and that names a board path, is refused. A board write through an MCP tool, a `!` command, code run by another interpreter (`node -e`, `python -c`), a path built by string formatting, or a Bash command that writes through a variable is not caught; the skill forbids those routes.
 - Without `node` on the hook `PATH`, or when a hook times out, the banner is silent and the guard does not run.
 - `TASKBOARD_ROOT=<dir>` pins the board to that directory instead of the repository root.
 - Journal entries record who made a change as `<user>@<pid>`.
 - A board records its format version. When a newer plugin version has changed a shared board's format, an older copy refuses to write it (reading still works) and asks to be updated, so two teammates on different versions can never corrupt one board.
-- When another board plugin that already shows this banner and guards these files is installed and active, TaskBoard's banner and guard stay silent so you see each only once.
+- When another board plugin that already shows this banner and guards these files is installed and active, TaskBoard's banner and guard stay silent so you see each only once. The guard still checks PowerShell and Monitor calls, which that plugin does not guard.
 
 ## Uninstall
 

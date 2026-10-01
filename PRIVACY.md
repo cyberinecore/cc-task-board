@@ -13,7 +13,7 @@ Its main files are the task files of the repository you are working in: the boar
 - `init` adds `.local/` to the repository's `.gitignore`; for a shared board it also adjusts that file so the board stays tracked, and adds a `merge=union` line for the journal to `.gitattributes`.
 - The board page is written to `.local/tasks/board.html`, or to a path you name with `board --out <file>`; the page is built from a template inside the plugin.
 - `draft --to <repo>` writes a draft task into the `.local/tasks/drafts/` folder of another repository you name, and `draft --file <file>` reads the file you name as the draft's text. Neither runs unless you or Claude invoke it with that path.
-- The guard hook reads the tool name, file path and, for a shell command, the command text that Claude Code hands it, to decide whether the call writes a board file. It keeps none of it and does not read your conversation.
+- The guard hook reads the tool name, file path and, for a shell command, the command text that Claude Code hands it, to decide whether the call writes a board file. When a shell or PowerShell command deletes, moves or matches a folder, it checks whether board files exist under the working directory, without reading them. It keeps none of it and does not read your conversation.
 
 It runs `git` to find the repository root, to check whether a path is ignored, and, when you wrap up the board, to list recent commit messages and the paths of uncommitted changes so work the board is missing can be logged; diffs and file contents are not read. It runs `open` (macOS) or `xdg-open` (Linux) only when you ask for the board page with `--open`.
 

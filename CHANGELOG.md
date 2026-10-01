@@ -2,6 +2,15 @@
 
 All notable changes to Cyberine TaskBoard. Versions follow `version` in `.claude-plugin/plugin.json`; each release is tagged `cyberine-taskboard--v<version>`.
 
+## [0.2.2] - 2026-10-02
+
+- The guard also covers the PowerShell tool: a PowerShell command that writes a board file (a redirect, `Set-Content`, `Add-Content`, `Out-File`, `Tee-Object`, `New-Item`, `Remove-Item`, `Rename-Item`, `Copy-Item` or `Move-Item` onto a board path or a folder holding one, or a .NET file write) is refused like the matching Bash command; reading, copying from the board and `-WhatIf` stay allowed. It follows literal variables and arrays, `Join-Path`, string concatenation, literal splatting, `$(...)` inside strings, wildcards, paths piped from `Get-Item` or `Get-ChildItem`, recursive folder copies, `Set-Location`/`Push-Location`, `Set-Alias` and `Set-Variable` within the command, and refuses a write it cannot resolve when the command names a board path.
+- The guard also refuses a Bash `cp`, `mv`, `rsync` or `install` into the board folder, `rm -r` of it, and a write after `cd` into it.
+- The guard also covers Monitor commands; a WebSocket monitor is not checked.
+- A board path that differs only in letter case, such as `.local/tasks/active.md`, or that goes through `.` or `..` segments, is refused on every tool, since macOS and Windows treat a case variant as the same file.
+- When the other board plugin is active, TaskBoard still guards PowerShell and Monitor calls, which that plugin does not cover.
+- CI validates the plugin with Claude Code 2.1.287.
+
 ## [0.2.1] - 2026-10-01
 
 - The bundled CLI is split into `cli/tasks.mjs` and `cli/lib/`, each file under 256 KiB so the directory can read all of it.
