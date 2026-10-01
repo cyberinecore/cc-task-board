@@ -12,14 +12,14 @@ Cyberine TaskBoard: a Claude Code plugin that keeps a repository's backlog in a 
 
 ## The bundle is generated, never edited
 
-`cli/tasks.mjs`, `cli/build.json`, `templates/tasks-board.html`, `references/board-voice.md`, `skills/tasks/SKILL.md` and `skills/end/SKILL.md` are built from the upstream source repository by its `taskboard:bundle` script, so every writer of a board shares one format. Re-vendor from that repository's checkout:
+`cli/tasks.mjs`, `cli/lib/chunk-*.mjs` (content-hashed, replaced on every re-vendor), `cli/build.json`, `templates/tasks-board.html`, `references/board-voice.md`, `skills/tasks/SKILL.md` and `skills/end/SKILL.md` are built from the upstream source repository by its `taskboard:bundle` script, so every writer of a board shares one format. Re-vendor from that repository's checkout:
 
 ```bash
 npm --prefix <upstream checkout> run taskboard:bundle -- --out <this repo> --program "/cyberine-taskboard:tasks" --tag taskboard
 npm --prefix <upstream checkout> run taskboard:bundle -- --check <this repo>
 ```
 
-`--check` rebuilds all six outputs with the options in `cli/build.json` and exits 1 naming each differing file; run it before every release. A fix to CLI behaviour or to the generated skill and voice text goes to the source repository, never into a vendored file. Hand-maintained here: the `init` and `help` skills, `hooks/hooks.json`, README, PRIVACY, SECURITY, CHANGELOG, the manifests and the tests. The template is resolved relative to the plugin root (`cli/..`), so keep the `cli/` and `templates/` layout.
+`--check` rebuilds every output (and fails on a stray file under `cli/lib/`) with the options in `cli/build.json` and exits 1 naming each differing file; run it before every release. A fix to CLI behaviour or to the generated skill and voice text goes to the source repository, never into a vendored file. Hand-maintained here: the `init` and `help` skills, `hooks/hooks.json`, README, PRIVACY, SECURITY, CHANGELOG, the manifests and the tests. The template is resolved relative to the plugin root (`cli/..`), so keep the `cli/` and `templates/` layout.
 
 ## Plugin constraints
 

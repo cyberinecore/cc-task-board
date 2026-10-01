@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { execFileSync, spawnSync } from 'node:child_process';
-import { mkdtempSync, mkdirSync, writeFileSync, chmodSync, readFileSync, readdirSync, existsSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, writeFileSync, chmodSync, readFileSync, readdirSync, existsSync, statSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -13,7 +13,7 @@ const readJson = (p) => JSON.parse(readFileSync(join(root, p), 'utf8'));
 function scratchRepo() {
   const dir = mkdtempSync(join(tmpdir(), 'taskboard-test-'));
   execFileSync('git', ['init', '-q'], { cwd: dir });
-  execFileSync('git', ['-c', 'user.name=t', '-c', 'user.email=t@example.invalid', 'commit', '-q', '--allow-empty', '-m', 'init'], { cwd: dir });
+  execFileSync('git', ['-c', 'user.name=t', '-c', 'user.email=taskboard-test', 'commit', '-q', '--allow-empty', '-m', 'init'], { cwd: dir });
   return dir;
 }
 
@@ -126,7 +126,12 @@ test('fleet commands are absent and no output names another product', () => {
     assert.equal(r.status, 2, args.join(' '));
     assert.doesNotMatch(r.stderr + r.stdout, banned, args.join(' '));
   }
-  assert.doesNotMatch(readFileSync(cli, 'utf8'), banned);
+  for (const file of [cli, ...readdirSync(join(root, 'cli', 'lib')).map((f) => join(root, 'cli', 'lib', f))]) assert.doesNotMatch(readFileSync(file, 'utf8'), banned, file);
+});
+
+test('every shipped text file stays under the directory 256 KiB inspection limit', () => {
+  const files = execFileSync('git', ['ls-files', '--cached', '--others', '--exclude-standard'], { cwd: root, encoding: 'utf8' }).split('\n').filter((f) => f && !/\.png$/.test(f));
+  for (const f of files) assert.ok(statSync(join(root, f)).size < 262144, f);
 });
 
 test('banner and guard yield only when the other board plugin would run', () => {

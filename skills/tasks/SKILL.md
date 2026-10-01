@@ -91,7 +91,7 @@ Evidence is something this session OBSERVED: an exit code, a status code, a diff
 - Never repair a malformed header yourself. When a command or `tasks doctor` prints `malformed status bracket ... needs a hand-fix` (an empty `[]` or an unknown word in the bracket), quote the line to the user: the task is invisible to every listing until the bracket is fixed.
 - Never write evidence this session did not observe.
 - Never promote a `backlog` task without the user's word.
-- Never pass `exec`, `model`, `reasoning` or `priority` the user did not state; the CLI owns the defaults.
+- Never set `exec`, `model`, `reasoning` or `priority` the user did not state; the CLI owns the defaults.
 - Warnings on lines the board does not recognise (a bare `note:` or `ledger:` from other tooling) are not a defect: never rewrite, strip or rename those lines to silence them.
 
 ## Out of scope

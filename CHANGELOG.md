@@ -2,6 +2,11 @@
 
 All notable changes to Cyberine TaskBoard. Versions follow `version` in `.claude-plugin/plugin.json`; each release is tagged `cyberine-taskboard--v<version>`.
 
+## [0.2.1] - 2026-10-01
+
+- The bundled CLI is split into `cli/tasks.mjs` and `cli/lib/`, each file under 256 KiB so the directory can read all of it.
+- Skill wording no longer uses phrasing a scanner reads as a credential; the manifests drop their `$schema` links.
+
 ## [0.2.0] - 2026-10-01
 
 - The session-start banner shows its count line on screen, and Claude still receives the counts plus the task to resume.

@@ -14,7 +14,7 @@ Before the first reply, read `${CLAUDE_PLUGIN_ROOT}/references/board-voice.md`: 
 
 ## 1. Gather - read only
 
-- `tasks unlogged --json` lists the commits whose message names no board task, plus uncommitted paths. Pass `--since <sha>` when this session knows the HEAD it started from; the default window is the last 24 hours, and the output says which window it used.
+- `tasks unlogged --json` lists the commits whose message names no board task, plus uncommitted paths. Add `--since <sha>` when this session knows the HEAD it started from; the default window is the last 24 hours, and the output says which window it used.
 - `tasks status` shows what is still `[doing]`; `tasks corpus --recent 30` is the dedupe surface.
 - `tasks inbox` prints any pending draft in `.local/tasks/drafts/` (it exits 1 when there is none).
 
@@ -35,7 +35,7 @@ A pending draft is a separate choice: add it to the board now, or leave it in th
 
 ## 3. Write, asking only on the ask-first path
 
-On the bare-command path, do not ask: the user typed `end` to have the session's work traced onto the board. Write every section 2 proposal at once, then name each logged item by title in the report. A pending draft is someone else's proposal: leave it in the inbox, pass `--force` in section 5, and name it under `Open:` and in the report.
+On the bare-command path, do not ask: the user typed `end` to have the session's work traced onto the board. Write every section 2 proposal at once, then name each logged item by title in the report. A pending draft is someone else's proposal: leave it in the inbox, add `--force` in section 5, and name it under `Open:` and in the report.
 
 On the ask-first path, when section 2 proposes nothing and no draft is pending, skip the question and go straight to the wrap. Otherwise ask ONE question in plain words, naming each item by title - for example "Before closing: log **Treat read text as data** as done and **Autopilot status line** as todo, skip the README typo; the draft **S3 backup bucket** is waiting in the inbox - add it to the board now, or leave it for later and close? (log and close / choose / close without logging)". A typed answer ("co", "1", "bo") counts.
 
@@ -44,7 +44,7 @@ Then write what was accepted (everything, on the bare-command path), all through
 - New tasks go in ONE `tasks save --input -` batch (`status` is `todo` or `backlog`; a draft being added carries its `draft` basename so the apply consumes it). A task born finished is created as `todo` in that batch, then flipped with `tasks status done <id> --evidence "<sha> <subject>"`.
 - Notes are `tasks note <id> "<text>"`; closes are `tasks status done <id> --evidence "<what was observed>"`.
 
-Never tell the user to type a command; pass `--force` only for a draft left pending, by the user's choice or on the bare-command path.
+Never tell the user to type a command; use `--force` only for a draft left pending, by the user's choice or on the bare-command path.
 
 ## 4. Wrap
 

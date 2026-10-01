@@ -37,4 +37,4 @@ When another installed board plugin already shows this banner and guards these f
 
 Limits: the guard sees Write, Edit, MultiEdit, NotebookEdit and Bash; a board write through an MCP tool or a `!` command is not caught, which is why the skill forbids it. The plugin needs `node` 20 or newer on the PATH; without it the banner is silent and the guard does not run.
 
-Privacy: no network requests, no keys, nothing stored outside the repository (except a board page you write with `board --out`). It runs `git` to find the repository root, and `open` or `xdg-open` only when you pass `--open`.
+Privacy: no network requests, no keys, nothing stored outside the repository (except a board page you write with `board --out`). It runs `git` to find the repository root, and `open` or `xdg-open` only when you add `--open`.
