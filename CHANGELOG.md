@@ -2,7 +2,7 @@
 
 All notable changes to Cyberine TaskBoard. Versions follow `version` in `.claude-plugin/plugin.json`; each release is tagged `cyberine-taskboard--v<version>`.
 
-## [0.3.0] - 2026-10-07
+## [0.3.0] - 2026-10-08
 
 - Re-vendored from the upstream board source at 181a6ff6. `--version` now prints the plugin version (0.3.0) instead of the upstream build number.
 - The bundled CLI guard itself now refuses case-variant and `.`/`..` board paths and PowerShell and Monitor writes, so the check no longer depends on the hook layer alone.
