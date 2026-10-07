@@ -58,11 +58,14 @@ Example: "Việc nên làm tiếp là **Thêm giới hạn đăng nhập** (k3wf
 The main write, and the only one with real judgement in it. Do the deciding BEFORE building the batch: `save` validates and writes, it does not triage.
 
 1. **Read the board** with `tasks corpus`. A task whose `title` AND `do` already match a manifest or archive block is skipped by the writer itself (`skipped (already applied): @<ref> -> <id>`). That is an exact-string match, not a similarity check, so a near-duplicate in other words lands as a second task; catching those is this skill's job, not the CLI's.
-2. **Split.** One concern per task; the test is the done-when. If it needs an "and" to be true, it is two tasks. A decision never ships bundled with the work that depends on it: the decision is its own task, and the work `deps:` on it.
+2. **Split, and separate the owner's work from the agent's.** One concern per task; the test is the done-when. If it needs an "and" to be true, it is two tasks. Agents run everything that needs no owner input, and what only the owner can do becomes a task of its own, so the board shows it and the dependents wait on it:
+   - **A decision is its own task and dependents list it in `deps`, never in a blocker.** A technical or design decision (library, pattern, schema, API shape) is settled first, by the `ask` skill where it is installed or else in this conversation; its verdict is written into the dependent's brief under `decisions` (rejected options under `rejected`) and no task is filed for it. A decision about money, law, presence (a name, a domain, what is published as the owner) or taste goes straight to the owner as `exec: manual`, titled "Owner: decide ...", whose brief holds the options, a recommendation and the default if the owner does not answer. Never answer an owner decision with a model panel, and never write it as `blocker:` on the agent task it stalls.
+   - **An external resource (account, key, API, domain, mailbox) is three tasks.** An `exec: agent` integration built against env config: the keys are an empty template in the gitignored env file (a hint per key, no values, never asked for in chat), tests use doubles, an emulator or the provider's test mode, and app code never carries fake data. Then "Owner: provision X and fill the keys" (`exec: manual`, `deps` on the integration). Then "Verify X live" (`deps` on the provisioning). The integration finishes as "built, live verification pending", never "done live".
+   - **A manual task holds only what the owner must do.** Any step an agent can run (a build, a benchmark, a script) is split out as an `exec: agent` task.
 3. **Order by dependency, with batch refs.** Inside a batch, `deps: ["@b"]` points at another task's `ref`; the writer orders the creation and substitutes the minted id. An unknown id, a `[forbidden]` dep or a cycle among refs rejects the whole batch. `tasks add --deps` validates the same way but has no `@ref`, so it cannot point at a task created in the same call; a multi-task write goes through `save`.
 4. **Write the brief now**, while the context exists: a brief is the one thing that cannot be recovered after the conversation closes. All six sections must be real (`intent`, `decisions`, `pointers`, `rejected`, `doneWhen`, `gotchas`) or the batch is rejected; a bare `N/A`, `None`, `TBD` or `-` is refused, and `decisions`, `rejected` and `gotchas` take `None - <why>` when there is genuinely nothing. Put the rejected approaches and the gotchas in: they are why the executor does not re-litigate a settled call.
-5. **Preview in titles and ask once** ("Create 3 tasks: A, B (after A), C?"). "These" with nothing earlier in the conversation to point at: ask what to save.
-6. **Apply** after the yes, printing the input shape first:
+5. **Preview in titles, then write in the same turn** ("Creating 3 tasks: A, B (after A), C."). The user's request to save is the consent (user ruling 2026-10-05). Ask only when "these" has nothing earlier in the conversation to point at (ask what to save) or when this session inferred the save rather than being asked for it.
+6. **Apply**, printing the input shape first:
 
 ```bash
 node "${CLAUDE_PLUGIN_ROOT}/cli/tasks.mjs" save --schema
@@ -82,7 +85,18 @@ Evidence is something this session OBSERVED: an exit code, a status code, a diff
 
 ## Blocked versus waiting
 
-`tasks status block <id> "<reason>"` attaches a blocker; `tasks status unblock <id>` releases it. A blocker is an EXTERNAL, human-opened condition: a credential, a purchase, a decision, a third party. Waiting on another task is a dependency (`deps:`), derived on every read, and must never be written as a blocker: the next view counts and reports the two separately on purpose, and conflating them inflates one bucket while hiding the other.
+`tasks status block <id> "<reason>"` attaches a blocker; `tasks status unblock <id>` releases it. A blocker is an external condition that no task on the board can express: a third party's review queue, a vendor outage, a legal hold outside the repo. Waiting on another task is a dependency (`deps:`), derived on every read, and must never be written as a blocker: the next view counts and reports the two separately on purpose, and conflating them inflates one bucket while hiding the other.
+
+An owner's decision, credential, purchase or account is NOT a blocker. It is a task: "Owner: decide ..." or "Owner: provision ..." (`exec: manual`), and the work that needs it lists it in `deps`. A task that already carries a blocker naming one of these is mis-shaped; mint the owner task, put its id in the dependent's `deps` (`tasks deps set <id> "<ids>"`), then release the blocker (`tasks status unblock <id>`). The dependent then shows under `waiting on deps`, not under `blocked`, and the blocked count stays honest.
+
+```bash
+node "${CLAUDE_PLUGIN_ROOT}/cli/tasks.mjs" add --title "Owner: decide the per-seat price" \
+  --do "Choose the monthly per-seat price from the options in the brief." \
+  --done-when "The chosen option is noted on this task." \
+  --effort S --exec manual --area billing --why "money decision, owner-only" --brief-file decide-price.md
+node "${CLAUDE_PLUGIN_ROOT}/cli/tasks.mjs" deps set k2t25 "k1s1d"
+node "${CLAUDE_PLUGIN_ROOT}/cli/tasks.mjs" status unblock k2t25
+```
 
 ## Hard rules
 
@@ -90,7 +104,7 @@ Evidence is something this session OBSERVED: an exit code, a status code, a diff
 - Never edit a board file directly; see "Never hand-edit the board".
 - Never repair a malformed header yourself. When a command or `tasks doctor` prints `malformed status bracket ... needs a hand-fix` (an empty `[]` or an unknown word in the bracket), quote the line to the user: the task is invisible to every listing until the bracket is fixed.
 - Never write evidence this session did not observe.
-- Never promote a `backlog` task without the user's word.
+- Never promote a `backlog` task by hand without the user's word. The CLI's promotion policy promotes on its own; a task it keeps (open dep, blocker, autopilot draft, or every task when the policy is `off`) stays until the user says so.
 - Never set `exec`, `model`, `reasoning` or `priority` the user did not state; the CLI owns the defaults.
 - Warnings on lines the board does not recognise (a bare `note:` or `ledger:` from other tooling) are not a defect: never rewrite, strip or rename those lines to silence them.
 

@@ -17,10 +17,23 @@ The user talks to the board in plain language and never needs to know a command,
 - **Never hand the user a command to type.** Not `tasks status todo k3wf6`, not "run end again", not "say 'end --force'". Offer the action in words and, after a yes, run the command yourself. When the CLI's own output names a command, translate it into plain words or run it. Never show which command ran, not even as a closing footnote; say it only when the user asks what ran.
 - **One question per turn at most.** For a choice between tasks or meanings, use the host's multiple-choice picker when it has one; a plain yes/no is one short inline line. A typed answer ("co", "de sau", "1", a title) always counts.
 
+## Owner work and agent work
+
+The board separates what an agent can run from what only the user can do. Say it the same way every time.
+
+- **Owner tasks are titled "Owner: ..." and named as the user's own move.** "Next for you: **Owner: decide the per-seat price** (k1s1d). It unlocks the pricing page." An agent task never carries an owner question inside it.
+- **A decision is offered as options, a recommendation and a default**, in plain words: "A 19 USD, B 29 USD. I suggest A because it matches the nearest competitors; if you do not answer before the first checkout deploy, A applies." Several decisions are labelled D1, D2 so one reply can settle them.
+- **Technical and design decisions are not put to the user** until the `ask` skill has tried them. Only money, law, presence and taste come straight to the user.
+- **An integration is reported "built, live verification pending"**, naming the "Owner: provision ..." task it waits behind. "Done live" is said only after the verify task closed with observed output.
+- **Keys and other values only the user has**: name the gitignored env file and the key names to fill, say the template is already there with empty values, and end the turn. Never ask the user to paste a value into the conversation, and never echo one back.
+- **Counts keep the two buckets apart**: "3 waiting on the Stripe keys, 0 blocked". A waiting task is a dependency on an owner task; a blocked one is a condition outside the board.
+- **Previewing a split** names every task by title, owner tasks first: "Create 4 tasks: Owner: decide the sender name; Send the welcome email (agent); Owner: provision Resend; Verify the welcome email (agent, after the provisioning). Go?"
+
 ## Consent
 
 - **An explicit write with a clear target runs at once.** "move the login task to later", "xong roi cai rate limit" or "block k3wf6 on the Stripe key" is the consent: run it, then say what changed. Do not add an undo hint; the user asks for undo when they want it.
-- **Ask first, as ONE question naming the tasks by title,** when the request is ambiguous (two tasks match, "cai nay" with no clear referent), inferred by this session rather than asked for, or a batch (saving a conversation as tasks, several flips at once): preview in titles ("Create 3 tasks: A, B, C; move D to later?"), then ask.
+- **Ask first, as ONE question naming the tasks by title,** when the request is ambiguous (two tasks match, "cai nay" with no clear referent) or inferred by this session rather than asked for: preview in titles ("Create 3 tasks: A, B, C; move D to later?"), then ask.
+- **A batch the user asked for runs at once** (user ruling 2026-10-05: almost everything is allowed by default). "Save these as tasks", "luu thanh tasks" or several flips named in one message is the consent: print the preview in titles, write it in the same turn, then say what was saved.
 - **Irreversible** (drop): always ask first, and offer "later" as the alternative. "drop it" or "bo viec nay" never becomes `[forbidden]`: that bracket is a permanent tombstone, not a bin.
 - **"xong roi" / "done" needs a referent and evidence.** Resolve which task from the conversation; when this session observed no evidence, ask once: check first / close it as unverified / not done yet.
 

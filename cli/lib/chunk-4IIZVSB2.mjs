@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 // <define:__TASKBOARD_BUILD__>
-var define_TASKBOARD_BUILD_default = { version: "0.2.0", source: "e27dd5ba", program: "/cyberine-taskboard:tasks" };
+var define_TASKBOARD_BUILD_default = { version: "0.2.3", source: "51822ea9", program: "/cyberine-taskboard:tasks" };
 
 // src/tasks/boardWrite.ts
 import { existsSync as existsSync11, mkdirSync as mkdirSync7, readFileSync as readFileSync10, writeFileSync as writeFileSync7 } from "node:fs";
@@ -18,6 +18,12 @@ var BOARD_ENV_NAMES = [
   "TASKBOARD_ROOT",
   "CYBERINE_TASKS_ROOT",
   "NF_TASKS_ROOT",
+  "CYBERINE_TASKS_AGENT",
+  "CYBERINE_TASKS_MACHINE",
+  "CYBERINE_TASKS_SYNC_DIR",
+  "CYBERINE_TASKS_STALE_DOING_DAYS",
+  "CYBERINE_TASKS_SESSION",
+  "CYBERINE_TASKS_CLAIM_TTL_MS",
   "NF_TASKS_AGENT",
   "NF_TASKS_MACHINE",
   "NF_TASKS_SYNC_DIR",
@@ -30,14 +36,29 @@ var BOARD_ENV_NAMES = [
   "PATH"
 ];
 var ALLOWED = new Set(BOARD_ENV_NAMES);
+var LEGACY_BOARD_ENV = {
+  CYBERINE_TASKS_AGENT: "NF_TASKS_AGENT",
+  CYBERINE_TASKS_MACHINE: "NF_TASKS_MACHINE",
+  CYBERINE_TASKS_SYNC_DIR: "NF_TASKS_SYNC_DIR",
+  CYBERINE_TASKS_STALE_DOING_DAYS: "NF_TASKS_STALE_DOING_DAYS",
+  CYBERINE_TASKS_SESSION: "NF_TASKS_SESSION",
+  CYBERINE_TASKS_CLAIM_TTL_MS: "NF_TASKS_CLAIM_TTL_MS"
+};
 function boardEnv(name, env = process.env) {
   if (!ALLOWED.has(name)) throw new Error(`board env: ${name} is not on the allowlist`);
-  return env[name];
+  const value = env[name];
+  if (value !== void 0) return value;
+  const legacy = LEGACY_BOARD_ENV[name];
+  return legacy === void 0 ? void 0 : env[legacy];
+}
+function noPromoteActive(env) {
+  const raw = (boardEnv("CYBERINE_TASKS_NO_PROMOTE", env) ?? "").trim().toLowerCase();
+  return raw !== "" && raw !== "0" && raw !== "false" && raw !== "no";
 }
 
 // src/tasks/boardPaths.ts
 function manifestCandidates(root) {
-  const syncDir = boardEnv("NF_TASKS_SYNC_DIR") || ".claude";
+  const syncDir = boardEnv("CYBERINE_TASKS_SYNC_DIR") || ".claude";
   const otherDir = syncDir === ".codex" ? ".claude" : ".codex";
   return [
     join(root, syncDir, "TASKS.md"),
@@ -212,7 +233,7 @@ function currentUser() {
   }
 }
 function agentTag() {
-  const env = boardEnv("NF_TASKS_AGENT");
+  const env = boardEnv("CYBERINE_TASKS_AGENT");
   if (env) return env.replace(/\s+/g, "_");
   return `${currentUser()}@${process.pid}`;
 }
@@ -1035,7 +1056,7 @@ function resolveRepoRoot(cwd) {
 }
 function resolveAgentTag(explicit) {
   let raw;
-  const envAgent = boardEnv("NF_TASKS_AGENT");
+  const envAgent = boardEnv("CYBERINE_TASKS_AGENT");
   if (explicit && explicit.trim().length > 0) {
     raw = explicit;
   } else if (envAgent !== void 0 && envAgent.trim().length > 0) {
@@ -2012,7 +2033,7 @@ function writeDraft(input) {
   const root = repoRoot(input.to ? resolve2(input.to) : process.cwd());
   assertBoardWritable(boardPathsFor(root).manifest);
   const fromRoot = repoRoot(process.cwd());
-  const machine = (boardEnv("NF_TASKS_MACHINE") ?? "").trim();
+  const machine = (boardEnv("CYBERINE_TASKS_MACHINE") ?? "").trim();
   const day = (/* @__PURE__ */ new Date()).toISOString().slice(0, 10);
   const from = `${sourceSlug(basename5(fromRoot))}${machine ? `@${machine}` : ""} ${day}`;
   const path = relative2(root, process.cwd());
@@ -3357,6 +3378,7 @@ function logDone(paths, descs, by) {
 export {
   define_TASKBOARD_BUILD_default,
   boardEnv,
+  noPromoteActive,
   manifestCandidates,
   repoRootStrict,
   submoduleScope,
@@ -3409,6 +3431,7 @@ export {
   deriveDayTitle,
   listJournalDaysFolded,
   readJournalDayFolded,
+  planReconcile,
   reconcileDryRun,
   reconcileLocked,
   reconcile,
@@ -3416,6 +3439,7 @@ export {
   archivedIds,
   archiveAbortLabel,
   archiveLocked,
+  readLedger,
   draftNames,
   validateDraftReferences,
   gatherDrafts,

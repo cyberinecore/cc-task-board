@@ -2,6 +2,16 @@
 
 All notable changes to Cyberine TaskBoard. Versions follow `version` in `.claude-plugin/plugin.json`; each release is tagged `cyberine-taskboard--v<version>`.
 
+## [0.3.0] - 2026-10-07
+
+- Re-vendored from the upstream board source at bae2b084 (CLI build 0.2.3).
+- Saving tasks you asked for runs in the same turn: Claude prints the titles and writes them, instead of asking first. A save Claude inferred on its own still asks.
+- What only you can do is its own task: a decision about money, law, a public name or taste becomes "Owner: decide ...", with options, a recommendation and the default if you do not answer; an outside account or key becomes "Owner: provision ...", between the agent's integration task and a live verification task. Work that needs it waits on it instead of being marked blocked.
+- An integration is reported "built, live verification pending" until the live check closes with observed output, and keys are asked for as an empty template in a gitignored env file, never in the chat.
+- `/cyberine-taskboard:end` runs without asking when your message tells the session to wrap the board, also when the phrase comes after other work in the same message ("finish this, then taskboard end"); things it would have asked become tasks or report lines.
+- The "next" view no longer swaps the blocked and waiting labels.
+- The environment variables for the journal name, machine, shared-board folder, stale threshold and task claims are now `CYBERINE_TASKS_*`; the `NF_TASKS_*` names still work when the new one is unset.
+
 ## [0.2.2] - 2026-10-02
 
 - The guard also covers the PowerShell tool: a PowerShell command that writes a board file (a redirect, `Set-Content`, `Add-Content`, `Out-File`, `Tee-Object`, `New-Item`, `Remove-Item`, `Rename-Item`, `Copy-Item` or `Move-Item` onto a board path or a folder holding one, or a .NET file write) is refused like the matching Bash command; reading, copying from the board and `-WhatIf` stay allowed. It follows literal variables and arrays, `Join-Path`, string concatenation, literal splatting, `$(...)` inside strings, wildcards, paths piped from `Get-Item` or `Get-ChildItem`, recursive folder copies, `Set-Location`/`Push-Location`, `Set-Alias` and `Set-Variable` within the command, and refuses a write it cannot resolve when the command names a board path.

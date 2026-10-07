@@ -49,10 +49,10 @@ Four commands, and everything else is said in plain words:
 
 Things to say, with or without `/cyberine-taskboard:tasks` in front:
 
-- "save these as tasks": Claude checks the board for duplicates, splits the work one concern per task, orders it by dependency and writes a brief for each, then applies the batch all-or-nothing.
+- "save these as tasks": Claude checks the board for duplicates, splits the work one concern per task, orders it by dependency and writes a brief for each, then applies the batch all-or-nothing in the same turn, naming each task it saved. What only you can do (a price, a name, provisioning an account and filling its keys) becomes its own "Owner: ..." task, and the work that needs it waits on it.
 - "what's next", "start on the rate limiter", "that's done": Claude answers with the task's title and the board's reason, and closes a task with evidence it observed (an exit code, a response, a line of output), or asks whether to check first or close it as unverified.
 - Vietnamese works too, with or without diacritics: "task nao tiep", "xong roi", "de sau", "ket vi chua co key".
-- "block k7m2q on the API key", "unblock k7m2q": a blocker is an outside condition; waiting on another task is a dependency and is tracked separately.
+- "block k7m2q on the vendor review", "unblock k7m2q": a blocker is an outside condition no task can express; a task waiting on another task, including an "Owner: ..." task for a key or a decision, is waiting, not blocked, and is counted separately.
 - "every Monday, update dependencies": recurring chores with their own cadence.
 - "show me the board": a read-only, self-contained HTML page with a Kanban, a sortable table, recurring, archive and journal tabs.
 

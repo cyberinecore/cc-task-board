@@ -315,7 +315,7 @@ test('fleet commands are absent and no output names another product', () => {
 });
 
 test('every shipped text file stays under the directory 256 KiB inspection limit', () => {
-  const files = execFileSync('git', ['ls-files', '--cached', '--others', '--exclude-standard'], { cwd: root, encoding: 'utf8' }).split('\n').filter((f) => f && !/\.png$/.test(f));
+  const files = execFileSync('git', ['ls-files', '--cached', '--others', '--exclude-standard'], { cwd: root, encoding: 'utf8' }).split('\n').filter((f) => f && !/\.png$/.test(f) && existsSync(join(root, f)));
   for (const f of files) assert.ok(statSync(join(root, f)).size < 262144, f);
 });
 
