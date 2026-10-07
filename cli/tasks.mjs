@@ -89,15 +89,15 @@ import {
   validateDraftReferences,
   writeDraft,
   writeFileAtomic
-} from "./lib/chunk-JX7O5ANX.mjs";
+} from "./lib/chunk-YYJ7UGUC.mjs";
 
 // scripts/taskboard-bundle/entry.ts
 import { homedir } from "node:os";
 
 // src/commands/tasksBoard.ts
 import { spawnSync as spawnSync2 } from "node:child_process";
-import { existsSync as existsSync15, mkdirSync as mkdirSync3, readFileSync as readFileSync17, statSync as statSync3, writeFileSync as writeFileSync2 } from "node:fs";
-import { basename as basename5, dirname as dirname5, join as join9, resolve as resolve2 } from "node:path";
+import { existsSync as existsSync16, mkdirSync as mkdirSync3, readFileSync as readFileSync17, statSync as statSync4, writeFileSync as writeFileSync2 } from "node:fs";
+import { basename as basename5, dirname as dirname5, join as join10, resolve as resolve2 } from "node:path";
 
 // src/tasks/boardShare.ts
 import { execFileSync } from "node:child_process";
@@ -601,23 +601,33 @@ function formatReport(r) {
   return lines.join("\n");
 }
 
+// src/tasks/boardShellGuard.ts
+import { existsSync as existsSync3, statSync } from "node:fs";
+import { join as join3, posix as posix2 } from "node:path";
+
 // src/tasks/boardGuard.ts
-import { basename as basename2 } from "node:path";
+import { basename as basename2, posix } from "node:path";
 var BOARD_RULE_QUOTE = 'Every change to the board goes through a `/cyberine-taskboard:tasks` subcommand. To a session these files are read-only: the manifest, TASKS_ARCHIVE.md beside it, status.log, and everything under status.d/ and journal/. Reading them is fine. Writing them by any other route is a hand-edit, whatever the tool.';
 var BOARD_PATH_PATTERNS = [
-  /(^|\/)\.local\/tasks\/ACTIVE\.md$/,
-  /(^|\/)\.claude\/TASKS\.md$/,
-  /(^|\/)\.codex\/TASKS\.md$/,
-  /(^|\/)TASKS_ARCHIVE\.md$/,
-  /(^|\/)\.local\/tasks\/status\.log$/,
-  /(^|\/)\.local\/tasks\/status\.d(\/|$)/,
-  /(^|\/)\.local\/tasks\/journal(\/|$)/,
-  /(^|\/)\.claude\/journal(\/|$)/,
-  /(^|\/)\.codex\/journal(\/|$)/,
-  /(^|\/)TASKS_DEDUPE_LEDGER\.jsonl$/
+  /(^|\/)\.local\/tasks\/ACTIVE\.md$/i,
+  /(^|\/)\.claude\/TASKS\.md$/i,
+  /(^|\/)\.codex\/TASKS\.md$/i,
+  /(^|\/)TASKS_ARCHIVE\.md$/i,
+  /(^|\/)\.local\/tasks\/status\.log$/i,
+  /(^|\/)\.local\/tasks\/status\.d(\/|$)/i,
+  /(^|\/)\.local\/tasks\/journal(\/|$)/i,
+  /(^|\/)\.claude\/journal(\/|$)/i,
+  /(^|\/)\.codex\/journal(\/|$)/i,
+  /(^|\/)TASKS_DEDUPE_LEDGER\.jsonl$/i
 ];
+function normalBoardPath(path) {
+  const stripped = String(path ?? "").replace(/^(?:Microsoft\.PowerShell\.Core\\)?FileSystem::/i, "").replace(/\\/g, "/");
+  if (stripped === "") return "";
+  const norm = posix.normalize(stripped).replace(/(.)\/+$/, "$1");
+  return norm === "." ? "" : norm;
+}
 function isBoardPath(path) {
-  const norm = String(path ?? "").replace(/\\/g, "/").replace(/\/+$/, "");
+  const norm = normalBoardPath(path);
   if (norm === "") return false;
   return BOARD_PATH_PATTERNS.some((re) => re.test(norm));
 }
@@ -718,9 +728,1029 @@ Use \`/cyberine-taskboard:tasks\` (or \`node \${CLAUDE_PLUGIN_ROOT}/cli/tasks.mj
   return { blocked: false };
 }
 
+// src/tasks/psTargets.mjs
+var CONTENT_VERBS = /* @__PURE__ */ new Set(["set-content", "sc", "add-content", "ac", "out-file", "tee-object", "tee", "export-csv", "epcsv", "export-clixml", "start-transcript"]);
+var PATH_VERBS = /* @__PURE__ */ new Set(["clear-content", "clc", "new-item", "ni", "remove-item", "ri", "rm", "del", "erase", "rd", "rmdir", "clear-item", "cli", "set-itemproperty", "sp"]);
+var REMOVE_VERBS = /* @__PURE__ */ new Set(["remove-item", "ri", "rm", "del", "erase", "rd", "rmdir"]);
+var RENAME_VERBS = /* @__PURE__ */ new Set(["rename-item", "ren", "rni"]);
+var COPY_VERBS = /* @__PURE__ */ new Set(["copy-item", "copy", "cp", "cpi"]);
+var MOVE_VERBS = /* @__PURE__ */ new Set(["move-item", "move", "mv", "mi"]);
+var LOCATION_VERBS = /* @__PURE__ */ new Set(["set-location", "sl", "cd", "chdir"]);
+var PUSH_VERBS = /* @__PURE__ */ new Set(["push-location", "pushd"]);
+var POP_VERBS = /* @__PURE__ */ new Set(["pop-location", "popd"]);
+var ALIAS_VERBS = /* @__PURE__ */ new Set(["set-alias", "sal", "new-alias", "nal"]);
+var VARIABLE_VERBS = /* @__PURE__ */ new Set(["set-variable", "sv", "new-variable", "nv"]);
+var BASH_SHELLS = /* @__PURE__ */ new Set(["bash", "sh", "zsh", "bash.exe"]);
+var NESTED_SHELLS = /* @__PURE__ */ new Set(["cmd", "cmd.exe", "powershell", "powershell.exe", "pwsh", "pwsh.exe", "invoke-expression", "iex"]);
+var WRITE_VERBS = /* @__PURE__ */ new Set([...CONTENT_VERBS, ...PATH_VERBS, ...RENAME_VERBS, ...COPY_VERBS, ...MOVE_VERBS]);
+var BASH_COPY_VERBS = /* @__PURE__ */ new Set(["rsync", "install", "ln"]);
+var BASH_WRITE_VERBS = /* @__PURE__ */ new Set(["cp", "mv", "rm", "rmdir", ...BASH_COPY_VERBS]);
+var VALUE_PARAMS = [
+  "path",
+  "literalpath",
+  "pspath",
+  "filepath",
+  "newname",
+  "name",
+  "destination",
+  "outfile",
+  "redirectstandardoutput",
+  "redirectstandarderror",
+  "redirectstandardinput",
+  "variable",
+  "value",
+  "itemtype",
+  "encoding",
+  "stream",
+  "filter",
+  "include",
+  "exclude",
+  "credential",
+  "delimiter",
+  "width",
+  "inputobject",
+  "type",
+  "target",
+  "argumentlist",
+  "uri",
+  "method",
+  "body",
+  "headers",
+  "pattern",
+  "totalcount",
+  "tail",
+  "readcount",
+  "depth",
+  "culture",
+  "erroraction",
+  "warningaction",
+  "informationaction",
+  "progressaction",
+  "errorvariable",
+  "warningvariable",
+  "informationvariable",
+  "outvariable",
+  "outbuffer",
+  "pipelinevariable",
+  "workingdirectory",
+  "command",
+  "scope",
+  "option",
+  "description",
+  "propertytype",
+  "property",
+  "tosession",
+  "fromsession",
+  "executionpolicy",
+  "childpath",
+  "additionalchildpath"
+];
+var PARAM_ALIASES = { lp: "literalpath", fp: "filepath", rso: "redirectstandardoutput", rse: "redirectstandarderror", ea: "erroraction", wa: "warningaction", ev: "errorvariable", ov: "outvariable", ob: "outbuffer", pv: "pipelinevariable", wd: "workingdirectory", args: "argumentlist", wi: "whatif" };
+var MUTATING_METHODS = /\.\s*(?:Delete|MoveTo|CopyTo|Replace|Encrypt|Decrypt|OpenWrite|AppendText|CreateText|Create|SetAccessControl)\s*\(/i;
+var FILE_OBJECT_SOURCES = /(?:\[(?:System\.)?IO\.(?:FileInfo|DirectoryInfo)\]::new\s*\(|New-Object\s+(?:-TypeName\s+)?(?:System\.)?IO\.(?:FileInfo|DirectoryInfo)(?:\s+-ArgumentList)?|\[(?:System\.)?IO\.(?:FileInfo|DirectoryInfo)\]|\b(?:Get-Item|gi|Get-ChildItem|gci|ls|dir)\b)/gi;
+var MAX_SCAN = 4096;
+var MAX_CALLS = 256;
+var MAX_NESTED = 32;
+function lex(command, { splitParens, subexprs }) {
+  const segments = [];
+  let tokens = [];
+  let cur = null;
+  let quote2 = null;
+  let redirect = false;
+  let listNext = false;
+  const start = () => cur ??= { text: "", quoted: false, single: false };
+  const flush = () => {
+    if (cur === null) return;
+    if (redirect) {
+      cur.redirect = true;
+      redirect = false;
+    }
+    if (listNext) {
+      cur.list = true;
+      listNext = false;
+    }
+    tokens.push(cur);
+    cur = null;
+  };
+  const endSegment = (sep = ";") => {
+    flush();
+    redirect = false;
+    listNext = false;
+    if (tokens.length > 0) {
+      tokens.sep = sep;
+      segments.push(tokens);
+    } else if (segments.length > 0 && sep === "|") {
+      segments.at(-1).sep = "|";
+    }
+    tokens = [];
+  };
+  const subexpr = (from) => {
+    if (subexprs.length > MAX_NESTED) {
+      subexprs.push(String(subexprs.length));
+      return from;
+    }
+    let depth = 0;
+    for (let j = from; j < command.length && j - from < MAX_SCAN; j++) {
+      if (command[j] === "(") depth++;
+      if (command[j] === ")" && --depth === 0) {
+        subexprs.push(command.slice(from + 1, j));
+        return j;
+      }
+    }
+    subexprs.push(command.slice(from + 1, Math.min(command.length, from + MAX_SCAN)));
+    return from;
+  };
+  for (let i = 0; i < command.length; i++) {
+    const ch = command[i];
+    if (quote2 === "'") {
+      if (ch === "'" && command[i + 1] === "'") {
+        cur.text += "'";
+        i++;
+        continue;
+      }
+      if (ch === "'") {
+        quote2 = null;
+        continue;
+      }
+      cur.text += ch;
+      continue;
+    }
+    if (quote2 === '"') {
+      if (ch === "`" && i + 1 < command.length) {
+        cur.text += command[++i];
+        continue;
+      }
+      if (ch === '"') {
+        quote2 = null;
+        continue;
+      }
+      if (ch === "$" && command[i + 1] === "(") {
+        const end = subexpr(i + 1);
+        cur.text += command.slice(i, end + 1);
+        i = end;
+        continue;
+      }
+      cur.text += ch;
+      continue;
+    }
+    if (ch === "@" && (command[i + 1] === "'" || command[i + 1] === '"') && /^\r?\n/.test(command.slice(i + 2, i + 4))) {
+      const close = command.indexOf(`
+${command[i + 1]}@`, i + 2);
+      const body = command.slice(i + 2, close < 0 ? command.length : close);
+      if (command[i + 1] === '"') {
+        for (let j = body.indexOf("$("); j >= 0; j = body.indexOf("$(", j + 2)) {
+          let depth = 0;
+          for (let k = j + 1; k < body.length && k - j < MAX_SCAN; k++) {
+            if (body[k] === "(") depth++;
+            if (body[k] === ")" && --depth === 0) {
+              subexprs.push(body.slice(j + 2, k));
+              break;
+            }
+          }
+        }
+      }
+      flush();
+      tokens.push({ text: body, quoted: true, single: command[i + 1] === "'" });
+      i = close < 0 ? command.length : close + 2;
+      continue;
+    }
+    if (ch === "<" && command[i + 1] === "#") {
+      const close = command.indexOf("#>", i + 2);
+      i = close < 0 ? command.length : close + 1;
+      flush();
+      continue;
+    }
+    if (ch === "#" && cur === null) {
+      while (i + 1 < command.length && command[i + 1] !== "\n") i++;
+      continue;
+    }
+    if (ch === "`") {
+      if (command[i + 1] === "\n" || command[i + 1] === "\r" && command[i + 2] === "\n") {
+        i += command[i + 1] === "\r" ? 2 : 1;
+        flush();
+        continue;
+      }
+      if (i + 1 < command.length) {
+        start().text += command[++i];
+        continue;
+      }
+    }
+    if (ch === "'" || ch === '"') {
+      const token = start();
+      if (token.text === "") {
+        token.quoted = true;
+        token.single = ch === "'";
+      }
+      quote2 = ch;
+      continue;
+    }
+    if (ch === ">") {
+      if (cur !== null && !cur.quoted && /^(?:\d|\*)$/.test(cur.text)) cur = null;
+      flush();
+      while (command[i + 1] === ">") i++;
+      if (command[i + 1] === "&") {
+        i++;
+        while (/\d/.test(command[i + 1] ?? "")) i++;
+        continue;
+      }
+      redirect = true;
+      continue;
+    }
+    if (ch === "$" && command[i + 1] === "{") {
+      const close = command.indexOf("}", i + 2);
+      const end = close < 0 ? command.length : close + 1;
+      start().text += command.slice(i, end);
+      i = end - 1;
+      continue;
+    }
+    if (!splitParens && (ch === "(" || (ch === "@" || ch === "$") && command[i + 1] === "(")) {
+      const open = ch === "(" ? i : i + 1;
+      const sigil = ch === "(" ? "" : ch;
+      const close = matchParen(command, open);
+      const inner = command.slice(open + 1, close < 0 ? command.length : close);
+      const items = sigil === "$" || cur !== null ? null : literalItems(inner);
+      if (items) {
+        items.forEach((item2, k) => {
+          if (k > 0) listNext = true;
+          cur = { text: item2.text, quoted: true, single: item2.single };
+          flush();
+        });
+      } else {
+        const token = start();
+        token.text += `${sigil}(${inner})`;
+        token.expr = true;
+      }
+      i = close < 0 ? command.length : close;
+      continue;
+    }
+    if ((ch === "@" || ch === "$") && command[i + 1] === "(" && cur === null) continue;
+    if ((ch === "\n" || ch === "\r") && listNext) continue;
+    if (";|\n\r{}".includes(ch) || ch === "&" && command[i + 1] === "&") {
+      if (ch === "|" && command[i + 1] === "|") {
+        endSegment(";");
+        i++;
+        continue;
+      }
+      endSegment(ch === "|" ? "|" : ch === "{" || ch === "}" ? ch : ";");
+      if (ch === "&") i++;
+      continue;
+    }
+    if (ch === "(" || ch === ")") {
+      endSegment(ch);
+      continue;
+    }
+    if (ch === ",") {
+      flush();
+      listNext = true;
+      continue;
+    }
+    if (/\s/.test(ch)) {
+      flush();
+      continue;
+    }
+    start().text += ch;
+  }
+  endSegment();
+  return segments;
+}
+function matchParen(command, open) {
+  let depth = 0;
+  let quote2 = null;
+  for (let j = open; j < command.length; j++) {
+    const c = command[j];
+    if (quote2 !== null) {
+      if (c === "`" && quote2 === '"') j++;
+      else if (c === quote2) quote2 = null;
+      continue;
+    }
+    if (c === "'" || c === '"') quote2 = c;
+    else if (c === "(") depth++;
+    else if (c === ")" && --depth === 0) return j;
+  }
+  return -1;
+}
+function literalItems(inner) {
+  const parts = [];
+  let quote2 = null;
+  let cur = "";
+  for (let j = 0; j < inner.length; j++) {
+    const c = inner[j];
+    if (quote2 !== null) {
+      if (c === "`" && quote2 === '"' && j + 1 < inner.length) {
+        cur += c + inner[++j];
+        continue;
+      }
+      if (c === quote2 && quote2 === "'" && inner[j + 1] === "'") {
+        cur += "''";
+        j++;
+        continue;
+      }
+      if (c === quote2) quote2 = null;
+      cur += c;
+      continue;
+    }
+    if (c === "'" || c === '"') quote2 = c;
+    if (c === ",") {
+      parts.push(cur);
+      cur = "";
+      continue;
+    }
+    cur += c;
+  }
+  parts.push(cur);
+  const quotedRe = /^'((?:[^']|'')*)'$|^"((?:[^"`$]|`.)*)"$/s;
+  const items = [];
+  for (const raw of parts) {
+    const part = raw.trim();
+    if (part === "") return null;
+    const pieces = part.split(/\s*\+\s*/);
+    const texts = pieces.map((p) => quotedRe.exec(p));
+    if (texts.every(Boolean)) {
+      items.push({ text: texts.map((m) => m[1] !== void 0 ? m[1].replace(/''/g, "'") : m[2].replace(/`(.)/g, "$1")).join(""), single: texts.every((m) => m[1] !== void 0) });
+    } else if (/^[^\s$()@'"`+]+$/.test(part)) {
+      items.push({ text: part, single: true });
+    } else {
+      return null;
+    }
+  }
+  return items;
+}
+function param(token) {
+  if (token.quoted || !/^-[A-Za-z][\w-]*(?::.*)?$/s.test(token.text)) return null;
+  const colon = token.text.indexOf(":");
+  const raw = (colon < 0 ? token.text.slice(1) : token.text.slice(1, colon)).toLowerCase();
+  const matches = VALUE_PARAMS.filter((p) => p.startsWith(raw));
+  let name = PARAM_ALIASES[raw] ?? (VALUE_PARAMS.includes(raw) ? raw : matches.length === 1 ? matches[0] : raw);
+  if (raw.length >= 2 && "whatif".startsWith(raw)) name = "whatif";
+  return { name, takesValue: VALUE_PARAMS.includes(name), inline: colon < 0 ? null : token.text.slice(colon + 1) };
+}
+function varName(text) {
+  const m = /^(?:\[[^\]]+\])*\$(?:\{([^}]+)\}|([\w:]+))$/.exec(text);
+  return m ? `$${(m[1] ?? m[2]).toLowerCase()}` : null;
+}
+function assignmentOf(words) {
+  if (words.length >= 2 && !words[0].quoted && varName(words[0].text) && words[1].text === "=" && !words[1].quoted) {
+    return { name: varName(words[0].text), skip: 2 };
+  }
+  if (words.length >= 1 && !words[0].quoted && /=$/.test(words[0].text) && varName(words[0].text.slice(0, -1))) {
+    return { name: varName(words[0].text.slice(0, -1)), skip: 1 };
+  }
+  if (words.length >= 1 && /^(?:\[[^\]]+\])*\$[\w:{}]+=./.test(words[0].text)) {
+    const eq = words[0].text.indexOf("=");
+    const name = varName(words[0].text.slice(0, eq));
+    if (name) return { name, skip: 0, inline: { text: words[0].text.slice(eq + 1), quoted: words[0].quoted, single: words[0].single } };
+  }
+  return null;
+}
+function externalPaths(text) {
+  return text.replace(/\$(?:\{env:(\w+)\}|env:(\w+)|home\b|\{home\})/gi, (m, a, b) => `/__outside__/${a ?? b ?? "home"}`).replace(/\$(?:\{pwd\}|pwd)(?:\.Path)?\b/gi, ".");
+}
+function append(list, items) {
+  for (const item2 of items) list.push(item2);
+}
+function slash(path) {
+  return path.replace(/\\/g, "/");
+}
+function isAbsolute(path) {
+  const p = slash(path);
+  return p.startsWith("/") || /^[A-Za-z]:\//.test(p) || /^[A-Za-z]+::/.test(p);
+}
+function parentJoin(source, name) {
+  const norm = slash(source);
+  const cut = norm.lastIndexOf("/");
+  return cut < 0 ? name : `${norm.slice(0, cut)}/${name}`;
+}
+function baseName(path) {
+  return slash(path).replace(/\/+$/, "").split("/").pop() ?? "";
+}
+function looksUnresolved(text) {
+  return /\$/.test(text) || /^@?\(/.test(text);
+}
+var BOARD_HINT = /ACTIVE\.md|TASKS(?:_ARCHIVE)?\.md|TASKS_DEDUPE_LEDGER|status\.(?:log|d)|journal|(?:^|[\\/'"\s])\.local(?:[\\/'"\s]|$)/i;
+function hintsBoard(text) {
+  return BOARD_HINT.test(text);
+}
+function mergeConcat(words) {
+  const out2 = [];
+  for (let i = 0; i < words.length; i++) {
+    let w = words[i];
+    while (words[i + 1] && !words[i + 1].quoted && words[i + 1].text === "+" && words[i + 2] && (w.quoted || words[i + 2].quoted)) {
+      w = { ...w, text: w.text + words[i + 2].text, quoted: true, single: w.single && words[i + 2].single };
+      i += 2;
+    }
+    out2.push(w);
+  }
+  return out2;
+}
+function commandTargets(tokens, state, out2, ctx) {
+  const resolve3 = (token) => {
+    if (token.single) {
+      state.literals.add(token.text);
+      return [token.text];
+    }
+    const name = varName(token.text);
+    if (name && state.vars.has(name)) return state.vars.get(name);
+    if (token.text.includes("$")) {
+      return [externalPaths(token.text).replace(/\$(?:\{([^}]+)\}|([\w:]+))/g, (m, a, b) => state.vars.get(`$${(a ?? b).toLowerCase()}`)?.[0] ?? m)];
+    }
+    return [token.text];
+  };
+  const place = (target) => state.cwd === "" || isAbsolute(target) ? target : `${state.cwd}/${slash(target)}`;
+  const push = (...targets) => {
+    for (const t of targets) {
+      if (looksUnresolved(t) && !state.literals.has(t)) out2.unresolved = true;
+      if (/[*?[]/.test(t)) out2.globs.push(place(t));
+      out2.targets.push(place(t));
+    }
+  };
+  const contain = (...paths) => out2.containers.push(...paths.map(place));
+  const assign = (name, value) => {
+    state.vars.set(name, value);
+    if (name === "$whatifpreference") state.whatIfAll = value.some((v2) => /^(?:\$?true|1)$/i.test(v2));
+  };
+  for (const t of tokens) if (t.redirect) push(...resolve3(t));
+  let words = mergeConcat(tokens.filter((t) => !t.redirect));
+  const assignment = assignmentOf(words);
+  if (assignment) {
+    if (assignment.inline) {
+      assign(assignment.name, resolve3(assignment.inline));
+      return;
+    }
+    const rest2 = words.slice(assignment.skip);
+    if (rest2.length > 0 && rest2.every((t, i) => t.quoted || varName(t.text) || /^\$(?:true|false|null)$/i.test(t.text) || i > 0 && t.list)) {
+      assign(assignment.name, rest2.flatMap(resolve3));
+      return;
+    }
+    words = rest2;
+  }
+  let v = 0;
+  let invoked = false;
+  while (v < words.length && !words[v].quoted && (["&", "."].includes(words[v].text) || /^\[[^\]]+\]$/.test(words[v].text))) {
+    if (["&", "."].includes(words[v].text)) invoked = true;
+    v++;
+  }
+  if (v >= words.length) return;
+  let verbText = words[v].text;
+  if (varName(verbText)) {
+    if (!invoked) return;
+    const value = state.vars.get(varName(verbText));
+    if (!value) {
+      if (words.slice(v + 1).some((t) => hintsBoard(t.text))) out2.unresolved = true;
+      return;
+    }
+    verbText = value[0];
+  }
+  let verb = verbText.toLowerCase().replace(/^.*[\\/]/, "");
+  verb = state.aliases.get(verb) ?? verb;
+  const rest = words.slice(v + 1).filter((t) => !(ctx.dialect === "bash" && !t.quoted && t.text === "--"));
+  const groups = [];
+  const named = /* @__PURE__ */ new Map();
+  let whatIf = false;
+  const takeList = (i, first) => {
+    const group = [...first];
+    while (rest[i + 1]?.list) group.push(...resolve3(rest[++i]));
+    return [i, group];
+  };
+  for (let i = 0; i < rest.length; i++) {
+    const p = param(rest[i]);
+    let group;
+    if (p === null) {
+      [i, group] = takeList(i, resolve3(rest[i]));
+      groups.push(group);
+      continue;
+    }
+    if (p.name === "whatif") {
+      const flag = p.inline === null ? "$true" : resolve3({ text: p.inline, quoted: false, single: false })[0];
+      if (!/^(?:\$false|0|)$/i.test(flag)) whatIf = true;
+      continue;
+    }
+    if (p.inline !== null && p.inline !== "") {
+      [i, group] = takeList(i, resolve3({ text: p.inline, quoted: false, single: false }));
+    } else if (p.inline === "" && rest[i + 1]) {
+      i++;
+      [i, group] = takeList(i, resolve3(rest[i]));
+    } else if (p.inline === null && p.takesValue && rest[i + 1] && param(rest[i + 1]) === null) {
+      i++;
+      [i, group] = takeList(i, resolve3(rest[i]));
+    } else {
+      continue;
+    }
+    named.set(p.name, [...named.get(p.name) ?? [], ...group]);
+  }
+  const positional = (from = 0, to = groups.length) => groups.slice(from, to).flat();
+  const values = (...names) => names.flatMap((n) => named.get(n) ?? []);
+  if (ALIAS_VERBS.has(verb)) {
+    const byName = values("name").length > 0;
+    const name = values("name")[0] ?? positional(0, 1)[0];
+    const value = values("value")[0] ?? positional(byName ? 0 : 1, byName ? 1 : 2)[0];
+    if (name && value) state.aliases.set(name.toLowerCase(), value.toLowerCase().replace(/^.*[\\/]/, ""));
+    return;
+  }
+  if (VARIABLE_VERBS.has(verb)) {
+    const byName = values("name").length > 0;
+    const name = values("name")[0] ?? positional(0, 1)[0];
+    const value = values("value").length > 0 ? values("value") : positional(byName ? 0 : 1);
+    if (name) assign(`$${name.replace(/^\$/, "").toLowerCase()}`, value);
+    return;
+  }
+  if (LOCATION_VERBS.has(verb) || PUSH_VERBS.has(verb)) {
+    const dir = values("path", "literalpath")[0] ?? positional(0, 1)[0];
+    if (PUSH_VERBS.has(verb)) state.stack.push(state.cwd);
+    if (dir) state.cwd = isAbsolute(dir) ? slash(dir) : state.cwd === "" ? slash(dir) : `${state.cwd}/${slash(dir)}`;
+    return;
+  }
+  if (POP_VERBS.has(verb)) {
+    state.cwd = state.stack.pop() ?? "";
+    return;
+  }
+  if (whatIf || state.whatIfAll) return;
+  push(...values("outfile", "redirectstandardoutput", "redirectstandarderror"));
+  if (BASH_SHELLS.has(verb)) {
+    const c = rest.findIndex((t) => !t.quoted && /^-[a-z]*c$/.test(t.text));
+    if (c >= 0 && rest[c + 1]) out2.bash.push(...resolve3(rest[c + 1]));
+    return;
+  }
+  if (verb === "wsl" || verb === "wsl.exe") {
+    out2.bash.push(rest.flatMap(resolve3).join(" "));
+    return;
+  }
+  if (NESTED_SHELLS.has(verb)) {
+    const inner = rest.filter((t) => t.quoted || !/^[-/](?:c|k|command|noprofile|noninteractive|nologo|executionpolicy|bypass)$/i.test(t.text));
+    out2.nested.push(inner.flatMap(resolve3).join(" "));
+    return;
+  }
+  if (ctx.dialect === "bash" ? !BASH_WRITE_VERBS.has(verb) : !WRITE_VERBS.has(verb)) return;
+  const piped = CONTENT_VERBS.has(verb) || verb === "clear-content" || verb === "clc" ? ctx.pipedObjects : ctx.piped;
+  if (CONTENT_VERBS.has(verb)) {
+    const explicit = values("path", "literalpath", "pspath", "filepath");
+    const first = positional(0, 1);
+    if (explicit.length === 0 && first.length === 0 && values("variable").length === 0) {
+      push(...piped);
+      contain(...piped);
+    }
+    push(...explicit, ...explicit.length > 0 || values("variable").length > 0 ? [] : first);
+  } else if (PATH_VERBS.has(verb)) {
+    let paths = [...values("path", "literalpath", "pspath"), ...positional()];
+    if (paths.length === 0) {
+      paths = piped;
+      contain(...piped);
+    }
+    push(...paths);
+    if (REMOVE_VERBS.has(verb)) contain(...paths);
+    for (const name of values("name")) for (const p of paths.length > 0 ? paths : ["."]) push(`${slash(p).replace(/\/+$/, "")}/${name}`);
+  } else if (RENAME_VERBS.has(verb)) {
+    const explicit = values("path", "literalpath", "pspath");
+    const fromPipe = explicit.length === 0 && values("newname").length > 0 && positional().length === 0;
+    const sources = fromPipe ? piped : explicit.length > 0 ? explicit : positional(0, 1);
+    const newNames = [...values("newname"), ...explicit.length > 0 || fromPipe ? positional(0, 1) : positional(1, 2)];
+    push(...sources);
+    contain(...sources);
+    for (const s of sources) for (const n of newNames) push(parentJoin(s, n));
+  } else if (COPY_VERBS.has(verb) || MOVE_VERBS.has(verb) || BASH_COPY_VERBS.has(verb)) {
+    const explicit = values("path", "literalpath", "pspath");
+    let sources;
+    let destinations;
+    if (ctx.dialect === "bash") {
+      const all = positional();
+      destinations = all.slice(-1);
+      sources = all.slice(0, -1);
+    } else {
+      const fromPipe = explicit.length === 0 && (values("destination").length > 0 ? positional().length === 0 : positional().length <= 1);
+      sources = fromPipe ? piped : explicit.length > 0 ? explicit : positional(0, 1);
+      const free = explicit.length > 0 || fromPipe ? positional() : positional(1);
+      destinations = values("destination").length > 0 ? values("destination") : free.slice(0, 1);
+    }
+    for (const d of destinations) for (const s of sources) out2.copies.push({ source: place(s), dest: place(d), dialect: ctx.dialect });
+    push(...destinations);
+    for (const d of destinations) for (const s of sources) push(`${slash(d).replace(/\/+$/, "")}/${baseName(s)}`);
+    if (MOVE_VERBS.has(verb)) {
+      push(...sources);
+      contain(...sources);
+    }
+  }
+}
+function codeText(command) {
+  const strings = [];
+  let code = "";
+  for (let i = 0; i < command.length; i++) {
+    const ch = command[i];
+    if (ch === "@" && (command[i + 1] === "'" || command[i + 1] === '"') && /^\r?\n/.test(command.slice(i + 2, i + 4))) {
+      const close = command.indexOf(`
+${command[i + 1]}@`, i + 2);
+      code += " ";
+      i = close < 0 ? command.length : close + 2;
+      continue;
+    }
+    if (ch === "<" && command[i + 1] === "#") {
+      const close = command.indexOf("#>", i + 2);
+      code += " ";
+      i = close < 0 ? command.length : close + 1;
+      continue;
+    }
+    if (ch === "#" && (i === 0 || /\s/.test(command[i - 1]))) {
+      while (i + 1 < command.length && command[i + 1] !== "\n") i++;
+      continue;
+    }
+    if (ch === "'" || ch === '"') {
+      let text = "";
+      let j = i + 1;
+      for (; j < command.length; j++) {
+        if (ch === "'" && command[j] === "'" && command[j + 1] === "'") {
+          text += "'";
+          j++;
+          continue;
+        }
+        if (ch === '"' && command[j] === "`" && j + 1 < command.length) {
+          text += command[++j];
+          continue;
+        }
+        if (command[j] === ch) break;
+        text += command[j];
+      }
+      code += `${strings.length}`;
+      strings.push({ text, single: ch === "'" });
+      i = j;
+      continue;
+    }
+    if (ch === "`" && i + 1 < command.length) {
+      code += command[++i];
+      continue;
+    }
+    code += ch;
+  }
+  return { code, strings };
+}
+function balanced(code, open) {
+  let depth = 0;
+  const limit = Math.min(code.length, open + MAX_SCAN);
+  for (let j = open; j < limit; j++) {
+    if (code[j] === "(") depth++;
+    if (code[j] === ")" && --depth === 0) return { args: code.slice(open + 1, j), end: j + 1 };
+  }
+  return { args: code.slice(open + 1, limit), end: limit };
+}
+function dotnetArgs(args2, strings, vars) {
+  const parts = [];
+  let depth = 0;
+  let cur = "";
+  for (const ch of args2) {
+    if (ch === "(" || ch === "[") depth++;
+    if (ch === ")" || ch === "]") depth--;
+    if (ch === "," && depth === 0) {
+      parts.push(cur);
+      cur = "";
+      continue;
+    }
+    cur += ch;
+  }
+  parts.push(cur);
+  return parts.map((part) => {
+    const p = part.trim().replace(/^\(+|\)+$/g, "").trim();
+    const lit = /^\u0001(\d+)\u0001$/.exec(p);
+    if (lit) {
+      const s = strings[Number(lit[1])];
+      if (!s.single && s.text.includes("$")) {
+        const text = externalPaths(s.text);
+        return { values: [text.replace(/\$(?:\{([^}]+)\}|([\w:]+))/g, (m, a, b) => vars.get(`$${(a ?? b).toLowerCase()}`)?.[0] ?? m)], literal: !/\$/.test(text) || [...text.matchAll(/\$(?:\{([^}]+)\}|([\w:]+))/g)].every((m) => vars.has(`$${(m[1] ?? m[2]).toLowerCase()}`)) };
+      }
+      return { values: [s.text], literal: true };
+    }
+    if (/^\$(?:\{?env:|\{?home\b|\{?pwd\b)/i.test(p)) return { values: [externalPaths(p)], literal: true };
+    const name = varName(p);
+    if (name && vars.has(name)) return { values: vars.get(name), literal: true };
+    return { values: [p.replace(/\u0001(\d+)\u0001/g, (_, n) => strings[Number(n)].text)], literal: false };
+  });
+}
+function readOnlyAccess(arg) {
+  return arg !== void 0 && arg.values.some((v) => /^(?:\[(?:System\.)?IO\.FileAccess\]::)?Read$|^1$/i.test(v.trim()));
+}
+function capped(matches, out2) {
+  const list = [];
+  for (const m of matches) {
+    if (list.length >= MAX_CALLS) {
+      out2.unresolved = true;
+      break;
+    }
+    list.push(m);
+  }
+  return list;
+}
+function dotnetTargets(command, vars, out2) {
+  const { code, strings } = codeText(command);
+  const want = (arg, kind = "targets") => {
+    if (arg === void 0) return;
+    if (!arg.literal) out2.unresolved = true;
+    append(out2[kind], arg.values);
+  };
+  for (const m of capped(code.matchAll(/\[(?:System\.)?IO\.(File|Directory)\]::(\w+)\s*\(/gi), out2)) {
+    const { args: args2 } = balanced(code, m.index + m[0].length - 1);
+    const directory = m[1].toLowerCase() === "directory";
+    const method = m[2].toLowerCase();
+    const list = dotnetArgs(args2, strings, vars);
+    if (directory) {
+      if (method === "delete") want(list[0], "containers");
+      else if (method === "move") {
+        want(list[0], "containers");
+        want(list[1]);
+      } else if (/^create/.test(method)) want(list[0]);
+      continue;
+    }
+    if (method === "copy") want(list[1]);
+    else if (method === "move") {
+      want(list[0]);
+      want(list[1]);
+    } else if (method === "replace") list.slice(0, 3).forEach((a) => want(a));
+    else if (method === "open" && readOnlyAccess(list[2])) continue;
+    else if (/^(?:write|append|create|delete|open(?!read|text)|set|encrypt|decrypt)/.test(method)) want(list[0]);
+  }
+  for (const m of capped(code.matchAll(/(?:\[(?:System\.)?IO\.(?:StreamWriter|FileStream)\]::new|New-Object\s+(?:-TypeName\s+)?(?:System\.)?IO\.(?:StreamWriter|FileStream)(?:\s+-ArgumentList)?)\s*\(/gi), out2)) {
+    const { args: args2 } = balanced(code, m.index + m[0].length - 1);
+    const list = dotnetArgs(args2, strings, vars);
+    if (readOnlyAccess(list[2])) continue;
+    want(list[0]);
+  }
+  for (const m of capped(code.matchAll(/New-Object\s+(?:-TypeName\s+)?(?:System\.)?IO\.(?:StreamWriter|FileStream)\s+(?:-ArgumentList\s+)?(\u0001\d+\u0001|\$[\w:{}]+)/gi), out2)) {
+    want(dotnetArgs(m[1], strings, vars)[0]);
+  }
+  if (MUTATING_METHODS.test(code)) {
+    for (const m of capped(code.matchAll(FILE_OBJECT_SOURCES), out2)) {
+      const after = code.slice(m.index + m[0].length, m.index + m[0].length + MAX_SCAN);
+      const arg = /^\s*\(?\s*(\u0001\d+\u0001|\$[\w:{}]+)/.exec(after) ?? /^\s+(?:-(?:Path|LiteralPath)\s+)?(\u0001\d+\u0001|\$[\w:{}]+)/i.exec(after);
+      if (!arg) continue;
+      const [first] = dotnetArgs(arg[1], strings, vars);
+      want(first);
+      want(first, "containers");
+    }
+    for (const m of capped(code.matchAll(/\.\s*(?:CopyTo|MoveTo)\s*\(/gi), out2)) {
+      const { args: args2 } = balanced(code, m.index + m[0].length - 1);
+      want(dotnetArgs(args2, strings, vars)[0]);
+    }
+  }
+}
+function joinPathArgs(args2) {
+  return args2.trim().split(/\s+/).filter((a) => a !== "" && !/^-(?:path|childpath|additionalchildpath|resolve)$/i.test(a)).map((a) => a.replace(/^['"]|['"]$/g, "").replace(/[\\/]+$/, "")).join("/");
+}
+function literalAssignments(command) {
+  return [...command.matchAll(/\$(\w+)\s*=\s*(['"])((?:(?!\2).)*)\2/g)].map((m) => ({ at: m.index, name: m[1].toLowerCase(), value: m[3] }));
+}
+function expand(command) {
+  const assignments = literalAssignments(command);
+  const valueAt = (name, at) => assignments.filter((a) => a.name === name && a.at < at).at(-1)?.value;
+  const substitute = (text, at) => externalPaths(text).replace(/\$(\w+)/g, (m, n) => {
+    const v = valueAt(n.toLowerCase(), at);
+    return v === void 0 ? m : `'${v}'`;
+  });
+  let out2 = command;
+  for (let round = 0; round < 8; round++) {
+    const next = out2.replace(/\(\s*Join-Path\s+([^()|;\n]+?)\s*\)/gi, (m, args2, at) => `'${joinPathArgs(substitute(args2, at))}'`).replace(/(=\s*)Join-Path\s+([^()|;\n]+)/gi, (m, eq, args2, at) => `${eq}'${joinPathArgs(substitute(args2, at))}'`);
+    if (next === out2) break;
+    out2 = next;
+  }
+  const splats = /* @__PURE__ */ new Map();
+  const addSplat = (name, text) => splats.set(name, [...splats.get(name) ?? [], text]);
+  for (const m of out2.matchAll(/\$(\w+)\s*=\s*@\{([^{}]*)\}/g)) {
+    const pairs = m[2].split(/[;\n]/).map((p) => /^\s*['"]?([A-Za-z]\w*)['"]?\s*=\s*(.+?)\s*$/.exec(p)).filter(Boolean);
+    addSplat(m[1].toLowerCase(), pairs.map((p) => `-${p[1]} ${p[2]}`).join(" "));
+  }
+  for (const m of out2.matchAll(/\$(\w+)(?:\.(\w+)|\[\s*['"](\w+)['"]\s*\])\s*=\s*([^;\n|]+)/g)) {
+    addSplat(m[1].toLowerCase(), `-${m[2] ?? m[3]} ${m[4].trim()}`);
+  }
+  for (const m of out2.matchAll(/\$(\w+)\s*=\s*@\(([^()]*)\)/g)) addSplat(m[1].toLowerCase(), m[2].replace(/,/g, " "));
+  return out2.replace(/(^|[\s(])@(\w+)(?=$|[\s;|)])/g, (m, lead, name) => splats.has(name.toLowerCase()) ? `${lead}${splats.get(name.toLowerCase()).join(" ")}` : m);
+}
+var OBJECT_VERBS = /* @__PURE__ */ new Set(["get-item", "gi", "get-childitem", "gci", "ls", "dir", "resolve-path", "rvpa"]);
+function emitsPathObjects(tokens) {
+  const first = (tokens.find((t) => !/^\[[^\]]+\]$/.test(t.text))?.text ?? "").toLowerCase();
+  return OBJECT_VERBS.has(first) || tokens.some((t) => /^(?:LiteralPath|Path|PSPath|FullName)=/i.test(t.text));
+}
+function pathish(tokens) {
+  return tokens.map((t) => t.text.replace(/^[A-Za-z]\w*=/, "")).filter((t) => hintsBoard(t) || /[\\/]/.test(t));
+}
+function psTargets(command, { dialect = "powershell", depth = 0 } = {}) {
+  const out2 = { targets: [], containers: [], globs: [], copies: [], bash: [], nested: [], unresolved: false };
+  if (depth > 3) {
+    append(out2.targets, command.split(/[\s'"`,;|()<>{}]+/));
+    return out2;
+  }
+  const expanded = expand(command);
+  const subexprs = [];
+  let vars = /* @__PURE__ */ new Map();
+  for (const splitParens of [true, false]) {
+    const state = { vars: /* @__PURE__ */ new Map(), aliases: /* @__PURE__ */ new Map(), literals: /* @__PURE__ */ new Set(), cwd: "", stack: [], whatIfAll: false };
+    let stmt = [];
+    let stmtObjects = [];
+    let afterPipe = false;
+    for (const tokens of lex(expanded, { splitParens, subexprs })) {
+      commandTargets(tokens, state, out2, { dialect, piped: afterPipe ? stmt : [], pipedObjects: afterPipe ? stmtObjects : [] });
+      const paths = pathish(tokens);
+      append(stmt, paths);
+      if (emitsPathObjects(tokens)) append(stmtObjects, paths);
+      if (tokens.sep === "|") afterPipe = true;
+      else if (tokens.sep === ";") {
+        stmt = [];
+        stmtObjects = [];
+        afterPipe = false;
+      }
+    }
+    if (splitParens) vars = state.vars;
+  }
+  dotnetTargets(expanded, vars, out2);
+  const inners = [.../* @__PURE__ */ new Set([...out2.nested, ...subexprs])];
+  if (inners.length > MAX_NESTED) {
+    out2.unresolved = true;
+    append(out2.targets, command.split(/[\s'"`,;|()<>{}]+/));
+    return out2;
+  }
+  for (const inner of inners) {
+    const sub2 = psTargets(inner, { dialect: "powershell", depth: depth + 1 });
+    for (const key of ["targets", "containers", "globs", "copies", "bash"]) append(out2[key], sub2[key]);
+    out2.unresolved ||= sub2.unresolved;
+  }
+  return out2;
+}
+
+// src/tasks/boardShellGuard.ts
+var BOARD_FILES = [
+  ".local/tasks/ACTIVE.md",
+  ".local/tasks/TASKS_ARCHIVE.md",
+  ".local/tasks/status.log",
+  ".local/tasks/status.d",
+  ".local/tasks/journal",
+  ".claude/TASKS.md",
+  ".claude/TASKS_ARCHIVE.md",
+  ".claude/journal",
+  ".codex/TASKS.md",
+  ".codex/TASKS_ARCHIVE.md",
+  ".codex/journal"
+];
+var BOARD_MARKERS = ["active.md", "tasks.md", "tasks_archive.md", "tasks_dedupe_ledger.jsonl", "status.log", "status.d", "journal"];
+var BOARD_DIR_MENTION = /(?:^|[\s'"`(=,\\/])\.local(?:[\\/]+tasks)?(?=$|[\s'"`),;|\\/*])/i;
+var MAX_CHECKS = 32;
+var MAX_PARSE = 1e6;
+var ADVICE = "Use `/cyberine-taskboard:tasks add | status | set | deps | merge | archive` instead.";
+function namesBoard(text) {
+  const lower = text.toLowerCase();
+  return BOARD_MARKERS.some((m) => lower.includes(m));
+}
+function mentionsBoard(text) {
+  return namesBoard(text) || BOARD_DIR_MENTION.test(text);
+}
+function isAbsolute2(path) {
+  return path.startsWith("/") || /^[A-Za-z]:\//.test(path);
+}
+function relativeToCwd(target, cwd) {
+  const base = normalBoardPath(cwd);
+  const path = normalBoardPath(target);
+  if (base === "" || path === "") return null;
+  const abs = isAbsolute2(path) ? path : posix2.join(base, path);
+  return { rel: posix2.relative(base.toLowerCase(), abs.toLowerCase()), up: posix2.relative(abs.toLowerCase(), base.toLowerCase()) };
+}
+function boardFilesUnder(container, cwd) {
+  const where = relativeToCwd(container, cwd);
+  if (where === null) return [];
+  const coversAll = where.rel === "" || where.up.split("/")[0] !== "..";
+  return BOARD_FILES.filter((file) => {
+    if (!coversAll && !`${file.toLowerCase()}/`.startsWith(`${where.rel}/`)) return false;
+    return existsSync3(join3(cwd, file));
+  });
+}
+function globRegex(glob) {
+  let re = "";
+  for (const ch of glob) {
+    if (ch === "*") re += "[^/]*";
+    else if (ch === "?") re += "[^/]";
+    else if (ch === "[" || ch === "]") re += ch;
+    else re += ch.replace(/[.+^${}()|\\]/g, "\\$&");
+  }
+  return new RegExp(`^${re}$`, "i");
+}
+function boardFilesMatching(glob, cwd) {
+  const where = relativeToCwd(glob, cwd);
+  if (where === null || where.rel.startsWith("..")) return [];
+  let re;
+  try {
+    re = globRegex(where.rel);
+  } catch {
+    return boardFilesUnder(posix2.dirname(where.rel), cwd);
+  }
+  return BOARD_FILES.filter((file) => {
+    const parts = file.toLowerCase().split("/");
+    const hit = parts.some((_, i) => re.test(parts.slice(0, i + 1).join("/")));
+    return hit && existsSync3(join3(cwd, file));
+  });
+}
+function isDirectory(path, cwd) {
+  try {
+    const p = normalBoardPath(path);
+    return statSync(isAbsolute2(p) ? p : join3(cwd, p)).isDirectory();
+  } catch {
+    return false;
+  }
+}
+function copyContainers(copies, cwd) {
+  const out2 = [];
+  for (const { source, dest, dialect } of copies) {
+    const src = String(source ?? "").replace(/\\/g, "/");
+    const into = String(dest ?? "").replace(/[\\/]+$/, "");
+    const named = `${into}/${posix2.basename(posix2.normalize(src))}`;
+    if (!isDirectory(src, cwd) && !/\/\.?$/.test(src)) continue;
+    if (dialect === "bash" && /\/\.?$/.test(src)) out2.push(into);
+    if (dialect === "bash" && /\/\.$/.test(src)) continue;
+    out2.push(named);
+  }
+  return out2;
+}
+function writtenBoardPaths(parsed, cwd) {
+  const found = [
+    ...parsed.targets,
+    ...[...parsed.containers, ...copyContainers(parsed.copies ?? [], cwd)].flatMap((c) => boardFilesUnder(c, cwd)),
+    ...parsed.globs.flatMap((g) => boardFilesMatching(g, cwd))
+  ];
+  const seen = /* @__PURE__ */ new Set();
+  const out2 = [];
+  for (const raw of found) {
+    const t = normalBoardPath(raw);
+    if (t === "" || seen.has(t) || !namesBoard(t)) continue;
+    seen.add(t);
+    const resolved = cwd !== "" && !isAbsolute2(t) ? posix2.join(normalBoardPath(cwd), t) : t;
+    if (isBoardPath(t) || isBoardPath(resolved)) out2.push(t);
+  }
+  return out2;
+}
+function parseShell(command, dialect) {
+  const coarse = (unresolved) => ({
+    targets: command.split(/[\s'"`,;|()<>{}]+/),
+    containers: [],
+    globs: [],
+    copies: [],
+    bash: [],
+    nested: [],
+    unresolved
+  });
+  if (command.length > MAX_PARSE) return coarse(false);
+  try {
+    return psTargets(command, { dialect });
+  } catch {
+    return coarse(mentionsBoard(command));
+  }
+}
+function refusal(tool, detail) {
+  return { blocked: true, reason: `${tool} refused: ${detail}
+${BOARD_RULE_QUOTE}
+${ADVICE}` };
+}
+function decideWrites(tool, paths) {
+  if (paths.length > MAX_CHECKS) return refusal(tool, "this command names more board paths than the guard can check; split it.");
+  const hit = paths[0];
+  if (hit === void 0) return { blocked: false };
+  return refusal(tool, `this command writes ${posix2.basename(hit)}, a TaskBoard board file, and this session may only READ it.`);
+}
+function decideBashSnippets(tool, snippets) {
+  for (const command of new Set(snippets)) {
+    const res = boardGuardDecision({ tool_name: "Bash", tool_input: { command } });
+    if (res.blocked) return { blocked: true, reason: (res.reason ?? "").replace(/^Bash refused:/, `${tool} refused:`) };
+  }
+  return { blocked: false };
+}
+function guardShell(tool, command, cwd, alsoBash) {
+  const parsed = parseShell(command, "powershell");
+  const snippets = alsoBash ? [command, ...parsed.bash] : parsed.bash;
+  const bash = decideBashSnippets(tool, snippets);
+  if (bash.blocked) return bash;
+  const paths = [...writtenBoardPaths(parsed, cwd), ...alsoBash ? writtenBoardPaths(parseShell(command, "bash"), cwd) : []];
+  const writes = decideWrites(tool, paths);
+  if (writes.blocked) return writes;
+  if (parsed.unresolved && mentionsBoard(command)) {
+    return refusal(tool, "this command writes to a path the guard cannot work out before it runs, and it names a board path.");
+  }
+  return { blocked: false };
+}
+function guardBash(payload, command, cwd) {
+  const first = boardGuardDecision(payload);
+  if (first.blocked || !mentionsBoard(command)) return first;
+  return decideWrites("Bash", writtenBoardPaths(parseShell(command, "bash"), cwd));
+}
+function decide(payload) {
+  const tool = String(payload.tool_name ?? "");
+  const command = String(payload.tool_input?.["command"] ?? "");
+  const cwd = String(payload.cwd ?? "");
+  if (tool === "PowerShell") return guardShell(tool, command, cwd, false);
+  if (tool === "Monitor") return command === "" ? { blocked: false } : guardShell(tool, command, cwd, true);
+  if (tool === "Bash") return guardBash(payload, command, cwd);
+  return boardGuardDecision(payload);
+}
+function shellBoardGuardDecision(payload) {
+  try {
+    return decide(payload);
+  } catch {
+    if (!mentionsBoard(JSON.stringify(payload))) return { blocked: false };
+    return refusal(String(payload.tool_name ?? "Tool"), "the guard could not check this call and the call names a board path.");
+  }
+}
+
 // src/tasks/boardDrop.ts
-import { existsSync as existsSync3, readFileSync as readFileSync3, rmSync } from "node:fs";
-import { join as join3 } from "node:path";
+import { existsSync as existsSync4, readFileSync as readFileSync3, rmSync } from "node:fs";
+import { join as join4 } from "node:path";
 function listDeps(block) {
   const raw = (block.fields.get("deps") ?? "").trim();
   return !raw || raw === "-" ? [] : raw.split(/[,\s]+/).filter(Boolean);
@@ -735,7 +1765,7 @@ function resolveIdPrefixSafe(candidate, ids) {
 function planDrop(paths, rawIds) {
   const live = parseManifestBlocks(readFileSync3(paths.manifest, "utf8")).blocks;
   const archived = parseManifestBlocks(
-    existsSync3(paths.archive) ? readFileSync3(paths.archive, "utf8") : ""
+    existsSync4(paths.archive) ? readFileSync3(paths.archive, "utf8") : ""
   ).blocks;
   const effective = new Map(fold(paths.manifest, paths).map((t) => [t.id, t.status]));
   const knownIds = new Set([...live, ...archived].map((b) => b.id));
@@ -764,12 +1794,12 @@ function planDrop(paths, rawIds) {
       problems.push(`${id}: is a [forbidden] tombstone that keeps save from re-adding it -- drop refuses a tombstone`);
       continue;
     }
-    const briefPath = join3(paths.tasksDir, `${id}.md`);
+    const briefPath = join4(paths.tasksDir, `${id}.md`);
     removals.push({
       id,
       title: liveBlocks2[0].title,
       manifestBlocks: liveBlocks2.length,
-      briefs: existsSync3(briefPath) ? [briefPath] : []
+      briefs: existsSync4(briefPath) ? [briefPath] : []
     });
   }
   const removing = new Set(removals.map((r) => r.id));
@@ -835,11 +1865,11 @@ function describeDrop(r) {
 }
 
 // src/tasks/boardForget.ts
-import { existsSync as existsSync4, readFileSync as readFileSync4, readdirSync as readdirSync2, rmSync as rmSync2, unlinkSync as unlinkSync2 } from "node:fs";
-import { join as join4 } from "node:path";
+import { existsSync as existsSync5, readFileSync as readFileSync4, readdirSync as readdirSync2, rmSync as rmSync2, unlinkSync as unlinkSync2 } from "node:fs";
+import { join as join5 } from "node:path";
 var DAY_FILE_RE = /^\d{4}-\d{2}-\d{2}\.jsonl$/;
 function readIfExists(path) {
-  return existsSync4(path) ? readFileSync4(path, "utf8") : "";
+  return existsSync5(path) ? readFileSync4(path, "utf8") : "";
 }
 function jsonlLines(path) {
   return readIfExists(path).split("\n").filter((l) => l.trim()).map((raw) => {
@@ -851,8 +1881,8 @@ function jsonlLines(path) {
   });
 }
 function journalFiles(journalDir) {
-  if (!existsSync4(journalDir)) return [];
-  return readdirSync2(journalDir).filter((f) => DAY_FILE_RE.test(f)).sort().map((f) => join4(journalDir, f));
+  if (!existsSync5(journalDir)) return [];
+  return readdirSync2(journalDir).filter((f) => DAY_FILE_RE.test(f)).sort().map((f) => join5(journalDir, f));
 }
 function resolveIdPrefixSafe2(candidate, ids) {
   try {
@@ -877,8 +1907,8 @@ function planForget(paths, rawIds) {
     }
     const liveBlocks2 = live.filter((b) => b.id === id);
     const archiveBlocks = archived.filter((b) => b.id === id);
-    const briefs = [join4(paths.tasksDir, `${id}.md`), join4(paths.tasksDir, "archive", `${id}.md`)].filter(
-      (p) => existsSync4(p)
+    const briefs = [join5(paths.tasksDir, `${id}.md`), join5(paths.tasksDir, "archive", `${id}.md`)].filter(
+      (p) => existsSync5(p)
     );
     const journal = /* @__PURE__ */ new Map();
     for (const { f, lines } of days) {
@@ -964,18 +1994,18 @@ function describeForget(r) {
 }
 
 // src/tasks/boardStatusView.ts
-import { existsSync as existsSync5, readFileSync as readFileSync5 } from "node:fs";
+import { existsSync as existsSync6, readFileSync as readFileSync5 } from "node:fs";
 import { basename as basename3 } from "node:path";
 
 // src/tasks/runnable.ts
-import { dirname as dirname2, join as join5 } from "node:path";
-import { statSync } from "node:fs";
+import { dirname as dirname2, join as join6 } from "node:path";
+import { statSync as statSync2 } from "node:fs";
 var archiveCache = /* @__PURE__ */ new Map();
 function archiveIdsFor(manifestPath) {
-  const archivePath = join5(dirname2(manifestPath), "TASKS_ARCHIVE.md");
+  const archivePath = join6(dirname2(manifestPath), "TASKS_ARCHIVE.md");
   let st;
   try {
-    const raw = statSync(archivePath);
+    const raw = statSync2(archivePath);
     st = { mtimeMs: raw.mtimeMs, size: raw.size };
   } catch {
     return /* @__PURE__ */ new Set();
@@ -1351,7 +2381,7 @@ function boardStatusView(paths, cwd, summary, showAll) {
 }
 function boardBannerView(paths, cwd) {
   const inputs = [...manifestCandidates(paths.root), paths.log, paths.statusDir, paths.archive];
-  if (!existsSync5(paths.manifest)) return { banner: "", inputs };
+  if (!existsSync6(paths.manifest)) return { banner: "", inputs };
   const view = boardView(paths, cwd, false);
   if (view.all.length === 0 && view.recurring.length === 0) return { banner: "", inputs };
   const lines = [boardStatusView(paths, cwd, true, false).stdout.trimEnd()];
@@ -1548,8 +2578,8 @@ function writeJsonLine(value) {
 }
 
 // src/tasks/boardHtml.ts
-import { existsSync as existsSync6, readFileSync as readFileSync6 } from "node:fs";
-import { basename as basename4, join as join6, relative } from "node:path";
+import { existsSync as existsSync7, readFileSync as readFileSync6 } from "node:fs";
+import { basename as basename4, join as join7, relative } from "node:path";
 
 // scripts/taskboard-bundle/packageRootStub.ts
 import { dirname as dirname3, resolve } from "node:path";
@@ -1570,7 +2600,7 @@ function daysBetween(from, to) {
   return Math.max(0, Math.round((b - a) / 864e5));
 }
 function readAttempts(briefPath) {
-  if (!existsSync6(briefPath)) return [];
+  if (!existsSync7(briefPath)) return [];
   const lines = readFileSync6(briefPath, "utf8").split("\n");
   const out2 = [];
   let inAttempts = false;
@@ -1585,7 +2615,7 @@ function readAttempts(briefPath) {
   return out2;
 }
 function archiveEntries(paths, recent) {
-  if (!existsSync6(paths.archive) || recent <= 0) return [];
+  if (!existsSync7(paths.archive) || recent <= 0) return [];
   const blocks = parseManifestBlocks(readFileSync6(paths.archive, "utf8"), TASK_ID_RE).blocks;
   return blocks.slice(-recent).reverse().map((b) => ({
     id: b.id,
@@ -1614,8 +2644,8 @@ function buildBoardData(paths, opts = {}) {
     const depsRaw = f("deps");
     const deps = depsRaw && depsRaw !== "-" ? depsRaw.split(/[,\s]+/).filter(Boolean) : [];
     const created = f("created");
-    const briefPath = join6(paths.tasksDir, `${b.id}.md`);
-    const hasBrief = existsSync6(briefPath);
+    const briefPath = join7(paths.tasksDir, `${b.id}.md`);
+    const hasBrief = existsSync7(briefPath);
     return {
       id: b.id,
       pos,
@@ -1658,11 +2688,11 @@ function buildBoardData(paths, opts = {}) {
   };
 }
 function boardTemplatePath() {
-  return join6(packageRoot(), "templates", TEMPLATE_NAME);
+  return join7(packageRoot(), "templates", TEMPLATE_NAME);
 }
 function renderBoardHtml(data) {
   const templatePath = boardTemplatePath();
-  if (!existsSync6(templatePath)) {
+  if (!existsSync7(templatePath)) {
     throw new Error(`/cyberine-taskboard:tasks board: template missing at ${templatePath}`);
   }
   const template = readFileSync6(templatePath, "utf8");
@@ -1675,7 +2705,7 @@ function renderBoardHtml(data) {
 }
 
 // src/tasks/boardStatusExtras.ts
-import { existsSync as existsSync7, mkdirSync as mkdirSync2, readFileSync as readFileSync7 } from "node:fs";
+import { existsSync as existsSync8, mkdirSync as mkdirSync2, readFileSync as readFileSync7 } from "node:fs";
 import { dirname as dirname4, relative as relative2 } from "node:path";
 function duplicateTarget(manifest, id) {
   const map = /* @__PURE__ */ new Map();
@@ -1695,7 +2725,7 @@ function duplicateTarget(manifest, id) {
 }
 function appendAttempt(briefPath, reason) {
   const entry = `- ${todayLocalDate()}: ${reason}`;
-  const src = existsSync7(briefPath) ? readFileSync7(briefPath, "utf8") : "";
+  const src = existsSync8(briefPath) ? readFileSync7(briefPath, "utf8") : "";
   const lines = src.endsWith("\n") ? src.slice(0, -1).split("\n") : src ? src.split("\n") : [];
   const start = lines.findIndex((line) => line.trim() === "## Attempts");
   if (start === -1) {
@@ -1752,7 +2782,7 @@ function forbiddenIdsMissingReason(manifest, ids) {
 }
 
 // src/tasks/boardRecurring.ts
-import { existsSync as existsSync8, readFileSync as readFileSync8 } from "node:fs";
+import { existsSync as existsSync9, readFileSync as readFileSync8 } from "node:fs";
 function epochOf(value) {
   const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
   if (!match) return 0;
@@ -1764,7 +2794,7 @@ function everyDays(value) {
   return n * (unit === "w" ? 7 : unit === "m" ? 30 : 1);
 }
 function recurringList(manifest) {
-  if (!existsSync8(manifest)) return "";
+  if (!existsSync9(manifest)) return "";
   const blocks = parseManifestBlocks(readFileSync8(manifest, "utf8"), /^R[0-9]+$/).blocks;
   const today = epochOf(todayLocalDate());
   return blocks.filter((b) => b.status === "recurring").map((b) => {
@@ -1780,7 +2810,7 @@ function recurringDueCount(manifest) {
   return recurringList(manifest).split("\n").filter((line) => /^(DUE|NEW)\|/.test(line)).length;
 }
 function recurringDid(manifest, id) {
-  if (!existsSync8(manifest)) throw new Error("no manifest");
+  if (!existsSync9(manifest)) throw new Error("no manifest");
   const src = readFileSync8(manifest, "utf8");
   const lines = src.endsWith("\n") ? src.slice(0, -1).split("\n") : src.split("\n");
   const block = parseManifestBlocks(lines.join("\n"), /^R[0-9]+$/).blocks.find((b) => b.id === id && b.status === "recurring");
@@ -1967,12 +2997,12 @@ function dropRecurring(manifest, id) {
 }
 
 // src/tasks/boardClaim.ts
-import { existsSync as existsSync10, readFileSync as readFileSync10 } from "node:fs";
+import { existsSync as existsSync11, readFileSync as readFileSync10 } from "node:fs";
 import { hostname } from "node:os";
 
 // src/tasks/manifestReader.ts
-import { existsSync as existsSync9, readdirSync as readdirSync3, readFileSync as readFileSync9, statSync as statSync2 } from "node:fs";
-import { join as join7 } from "node:path";
+import { existsSync as existsSync10, readdirSync as readdirSync3, readFileSync as readFileSync9, statSync as statSync3 } from "node:fs";
+import { join as join8 } from "node:path";
 var STATUS_LOG_REL = [".local", "tasks", "status.log"];
 var STATUS_TASKS_DIR_REL = [".local", "tasks"];
 var STATUS_D_REL = [".local", "tasks", "status.d"];
@@ -1989,7 +3019,7 @@ function resolveRepoRoot(cwd) {
 }
 function findManifest(repoRoot) {
   for (const p of manifestCandidates(repoRoot)) {
-    if (!existsSync9(p)) continue;
+    if (!existsSync10(p)) continue;
     try {
       return { path: p, content: readFileSync9(p, "utf8") };
     } catch (err) {
@@ -2012,24 +3042,24 @@ function collectOverlaySources(repoRoot) {
   const sources = [];
   const addIfReadable = (p) => {
     try {
-      sources.push({ path: p, mtimeNs: statSync2(p, { bigint: true }).mtimeNs });
+      sources.push({ path: p, mtimeNs: statSync3(p, { bigint: true }).mtimeNs });
     } catch {
     }
   };
-  const mainLog = join7(repoRoot, ...STATUS_LOG_REL);
-  if (existsSync9(mainLog)) addIfReadable(mainLog);
-  const tasksDir = join7(repoRoot, ...STATUS_TASKS_DIR_REL);
-  if (existsSync9(tasksDir)) {
+  const mainLog = join8(repoRoot, ...STATUS_LOG_REL);
+  if (existsSync10(mainLog)) addIfReadable(mainLog);
+  const tasksDir = join8(repoRoot, ...STATUS_TASKS_DIR_REL);
+  if (existsSync10(tasksDir)) {
     for (const name of listDirSafe(tasksDir)) {
-      if (name.startsWith("status.log.snap.")) addIfReadable(join7(tasksDir, name));
+      if (name.startsWith("status.log.snap.")) addIfReadable(join8(tasksDir, name));
     }
   }
-  const statusD = join7(repoRoot, ...STATUS_D_REL);
-  if (existsSync9(statusD)) {
+  const statusD = join8(repoRoot, ...STATUS_D_REL);
+  if (existsSync10(statusD)) {
     for (const name of listDirSafe(statusD)) {
       if (name.startsWith(".tmp.")) continue;
       if (!name.endsWith(".log")) continue;
-      addIfReadable(join7(statusD, name));
+      addIfReadable(join8(statusD, name));
     }
   }
   return sources;
@@ -2200,7 +3230,7 @@ function leaseRefusal(paths, id, caller = claimOwner(), now = Date.now()) {
 }
 
 // src/tasks/boardNote.ts
-import { existsSync as existsSync11, readFileSync as readFileSync11 } from "node:fs";
+import { existsSync as existsSync12, readFileSync as readFileSync11 } from "node:fs";
 var FLAG_RE = /^--?[A-Za-z]/;
 function resolveLiveTaskId(paths, rawId, cmd) {
   if (RECURRING_ID_RE.test(rawId)) {
@@ -2255,7 +3285,7 @@ function appendUpdateLine(manifest, id, text, date = todayLocalDate()) {
 }
 var UPDATES_HEADING = "## Updates";
 function addBriefUpdate(briefPath, text, date = todayLocalDate()) {
-  if (!existsSync11(briefPath)) {
+  if (!existsSync12(briefPath)) {
     throw new BoardRejected(
       `brief note: no brief at ${briefPath} -- nothing to annotate; use \`note <id>\` for the manifest block`
     );
@@ -2289,7 +3319,7 @@ function addBriefUpdate(briefPath, text, date = todayLocalDate()) {
 }
 
 // src/tasks/boardSuggest.ts
-import { existsSync as existsSync12, readFileSync as readFileSync13 } from "node:fs";
+import { existsSync as existsSync13, readFileSync as readFileSync13 } from "node:fs";
 
 // src/tasks/boardTidy.ts
 import { readFileSync as readFileSync12 } from "node:fs";
@@ -2489,7 +3519,7 @@ var FLEET_DISPATCH = false;
 // src/tasks/boardSuggest.ts
 function suggestReport(paths, cwd) {
   const lines = [];
-  const hasManifest = existsSync12(paths.manifest);
+  const hasManifest = existsSync13(paths.manifest);
   const draftCount = draftNames(paths.draftsDir).length;
   let todoCount = 0;
   let doneCount = 0;
@@ -2577,8 +3607,8 @@ function suggestReport(paths, cwd) {
 }
 
 // src/tasks/boardHygiene.ts
-import { existsSync as existsSync13, readFileSync as readFileSync14 } from "node:fs";
-import { join as join8 } from "node:path";
+import { existsSync as existsSync14, readFileSync as readFileSync14 } from "node:fs";
+import { join as join9 } from "node:path";
 var HYGIENE_SCHEMA = "board-hygiene/1";
 var LIVE_STATUSES = /* @__PURE__ */ new Set(["todo", "doing", "backlog"]);
 var STATUS_RANK = { doing: 3, todo: 2, backlog: 1 };
@@ -2703,7 +3733,7 @@ function duplicates(paths, ctx) {
   const dependents = /* @__PURE__ */ new Map();
   for (const b of ctx.blocks) for (const d of splitDeps(b.fields.get("deps"))) dependents.set(d, (dependents.get(d) ?? 0) + 1);
   const position = new Map(ctx.blocks.map((b, i) => [b.id, i]));
-  const hasBrief = (id) => existsSync13(join8(paths.tasksDir, `${id}.md`));
+  const hasBrief = (id) => existsSync14(join9(paths.tasksDir, `${id}.md`));
   const survivorOf = (group) => {
     const ranked = [...group].sort((x, y) => {
       const sx = STATUS_RANK[ctx.effective.get(x.id) ?? ""] ?? 0;
@@ -3033,12 +4063,12 @@ function moveTask(paths, moveId, position, anchorId) {
 
 // src/tasks/boardUnlogged.ts
 import { spawnSync } from "node:child_process";
-import { existsSync as existsSync14, readFileSync as readFileSync16 } from "node:fs";
+import { existsSync as existsSync15, readFileSync as readFileSync16 } from "node:fs";
 var DEFAULT_UNLOGGED_WINDOW = "24 hours ago";
 function knownTaskIds(manifest, archive) {
   const ids = /* @__PURE__ */ new Set();
   for (const file of [manifest, archive]) {
-    if (!existsSync14(file)) continue;
+    if (!existsSync15(file)) continue;
     for (const block of parseManifestBlocks(readFileSync16(file, "utf8"), TASK_ID_RE).blocks) ids.add(block.id);
   }
   return ids;
@@ -3208,12 +4238,12 @@ function positionals(args2, valueFlags) {
   return rest;
 }
 function requireManifest(paths) {
-  if (!existsSync15(paths.manifest)) {
+  if (!existsSync16(paths.manifest)) {
     refuse(`/cyberine-taskboard:tasks: no manifest at ${paths.manifest} -- create the board first`);
   }
 }
 function emitLint(paths) {
-  if (!existsSync15(paths.manifest)) return;
+  if (!existsSync16(paths.manifest)) return;
   const notice = boardFormatNotice(paths.manifest);
   if (notice) warn(notice);
   for (const w of lintManifest(readFileSync17(paths.manifest, "utf8"))) warn(w);
@@ -3295,7 +4325,7 @@ function runStatus(paths, args2) {
     }
     let briefFailed = false;
     try {
-      appendAttempt(join9(paths.tasksDir, `${resolved}.md`), reason);
+      appendAttempt(join10(paths.tasksDir, `${resolved}.md`), reason);
     } catch (e) {
       warn(e.message);
       process.exitCode = 1;
@@ -3383,8 +4413,8 @@ usage: status <done|todo|doing|backlog|forbidden> <id...> [--evidence <text> | -
   if (token === "doing" || token === "done") {
     const caller = claimOwner();
     for (const id of ids) {
-      const refusal = leaseRefusal(paths, id, caller);
-      if (refusal) refuse(refusal);
+      const refusal2 = leaseRefusal(paths, id, caller);
+      if (refusal2) refuse(refusal2);
     }
   }
   const extra = evidence !== void 0 ? `evidence:${evidence.replace(/\s+/g, " ").trim()}` : failReason !== void 0 ? `fail:${failReason.replace(/\s+/g, " ").trim()}` : void 0;
@@ -3540,7 +4570,7 @@ function runAdd(paths, args2) {
   const createdBy = flagValue(args2, "--created-by");
   let briefBody;
   if (briefFile) {
-    if (!existsSync15(briefFile)) refuse(`/cyberine-taskboard:tasks add: --brief-file not found: ${briefFile}`);
+    if (!existsSync16(briefFile)) refuse(`/cyberine-taskboard:tasks add: --brief-file not found: ${briefFile}`);
     briefBody = readFileSync17(briefFile, "utf8");
   }
   const decision = {
@@ -3574,8 +4604,8 @@ function runAdd(paths, args2) {
     const created = result.created[0];
     if (!created) return;
     mkdirSync3(paths.tasksDir, { recursive: true });
-    const path = join9(paths.tasksDir, `${created.id}.md`);
-    if (existsSync15(path) || existsSync15(join9(paths.tasksDir, "archive", `${created.id}.md`))) return;
+    const path = join10(paths.tasksDir, `${created.id}.md`);
+    if (existsSync16(path) || existsSync16(join10(paths.tasksDir, "archive", `${created.id}.md`))) return;
     writeFileSync2(path, briefBody);
     out(`brief written:
   ${path}`);
@@ -3622,7 +4652,7 @@ ${BATCH_SET_USAGE}`);
   if (!by.trim()) refuse(`/cyberine-taskboard:tasks set --batch: --by <model-id> is required
 
 ${BATCH_SET_USAGE}`);
-  if (inputPath !== "-" && !existsSync15(inputPath)) {
+  if (inputPath !== "-" && !existsSync16(inputPath)) {
     refuse(`/cyberine-taskboard:tasks set --batch: no such file: ${inputPath}`);
   }
   const raw = inputPath === "-" ? await readStdin() : readFileSync17(inputPath, "utf8");
@@ -4105,7 +5135,7 @@ ${BRIEF_NOTE_USAGE}`);
   const parsed = parseIdAndText(rest, "brief note", BRIEF_NOTE_USAGE);
   const id = withLock(paths, () => {
     const resolvedId = resolveLiveTaskId(paths, parsed.rawId, "brief note");
-    addBriefUpdate(join9(paths.tasksDir, `${resolvedId}.md`), parsed.text);
+    addBriefUpdate(join10(paths.tasksDir, `${resolvedId}.md`), parsed.text);
     return resolvedId;
   });
   out(`${id}: brief updated (${UPDATES_HEADING})`);
@@ -4283,7 +5313,7 @@ function runCorpus(paths, args2) {
     };
   };
   for (const b of parsed.blocks) out(JSON.stringify(toRecord(b, "manifest", effective.get(b.id))));
-  const archiveBlocks = existsSync15(paths.archive) ? parseManifestBlocks(readFileSync17(paths.archive, "utf8"), TASK_ID_RE).blocks : [];
+  const archiveBlocks = existsSync16(paths.archive) ? parseManifestBlocks(readFileSync17(paths.archive, "utf8"), TASK_ID_RE).blocks : [];
   const shown = recent >= archiveBlocks.length ? archiveBlocks : archiveBlocks.slice(archiveBlocks.length - recent);
   if (archiveBlocks.length > 0) {
     out(JSON.stringify({ meta: true, source: "archive", shown: shown.length, total: archiveBlocks.length, recent }));
@@ -4357,7 +5387,7 @@ ${BOARD_USAGE}`);
     out(JSON.stringify(data));
     return;
   }
-  const target = outFile ?? join9(paths.root, ".local", "tasks", "board.html");
+  const target = outFile ?? join10(paths.root, ".local", "tasks", "board.html");
   mkdirSync3(dirname5(target), { recursive: true });
   writeFileSync2(target, renderBoardHtml(data));
   const counts = data.tasks.reduce((acc, t) => {
@@ -4432,7 +5462,7 @@ async function runConvergeApply(paths, args2) {
   const inputPath = flagValue(args2, "--input");
   let raw;
   if (inputPath && inputPath !== "-") {
-    if (!existsSync15(inputPath)) refuse(`/cyberine-taskboard:tasks save: no such input file: ${inputPath}`);
+    if (!existsSync16(inputPath)) refuse(`/cyberine-taskboard:tasks save: no such input file: ${inputPath}`);
     raw = readFileSync17(inputPath, "utf8");
   } else {
     raw = await readStdin();
@@ -4478,7 +5508,7 @@ async function runDraft(args2) {
   if (titles.length !== 1 || !titles[0]?.trim()) refuse('/cyberine-taskboard:tasks draft: a "<title>" is required');
   const file = flagValue(args2, "--file");
   const useStdin = hasFlag(args2, "--stdin");
-  if (file && (!existsSync15(file) || !statSync3(file).isFile())) refuse(`/cyberine-taskboard:tasks draft: --file not found: ${file}`);
+  if (file && (!existsSync16(file) || !statSync4(file).isFile())) refuse(`/cyberine-taskboard:tasks draft: --file not found: ${file}`);
   const stdin = file || !useStdin ? void 0 : await readStdin();
   if (useStdin && !file && !stdin?.trim()) refuse("/cyberine-taskboard:tasks draft: --stdin given but no input received");
   const result = writeDraft({
@@ -4518,7 +5548,7 @@ async function runGuard() {
   } catch {
     process.exit(0);
   }
-  const decision = boardGuardDecision(payload);
+  const decision = shellBoardGuardDecision(payload);
   if (!decision.blocked) process.exit(0);
   process.stderr.write(`${decision.reason ?? "board write refused"}
 `);
@@ -4699,8 +5729,8 @@ async function cmdTasksBoard(argv) {
 }
 
 // src/tasks/boardYield.ts
-import { existsSync as existsSync16, readFileSync as readFileSync18, realpathSync as realpathSync2, statSync as statSync4 } from "node:fs";
-import { delimiter, dirname as dirname6, join as join10 } from "node:path";
+import { existsSync as existsSync17, readFileSync as readFileSync18, realpathSync as realpathSync2, statSync as statSync5 } from "node:fs";
+import { delimiter, dirname as dirname6, join as join11 } from "node:path";
 var BIG_PLUGIN_NAME = "cyberine";
 var BIG_PLUGIN_KEY_PREFIX = "cyberine@";
 var HOOK_LAUNCHERS = {
@@ -4725,9 +5755,9 @@ function readJson(file) {
 }
 function bigPluginLinked(home) {
   try {
-    const dir = realpathSync2(join10(home, ".claude", "skills", BIG_PLUGIN_NAME));
-    if (!statSync4(dir).isDirectory()) return false;
-    const manifest = readJson(join10(dir, ".claude-plugin", "plugin.json"));
+    const dir = realpathSync2(join11(home, ".claude", "skills", BIG_PLUGIN_NAME));
+    if (!statSync5(dir).isDirectory()) return false;
+    const manifest = readJson(join11(dir, ".claude-plugin", "plugin.json"));
     return isRecord(manifest) && manifest.name === BIG_PLUGIN_NAME;
   } catch {
     return false;
@@ -4735,9 +5765,9 @@ function bigPluginLinked(home) {
 }
 function settingsScopeFiles(home, cwd) {
   return [
-    join10(home, ".claude", "settings.json"),
-    join10(cwd, ".claude", "settings.json"),
-    join10(cwd, ".claude", "settings.local.json")
+    join11(home, ".claude", "settings.json"),
+    join11(cwd, ".claude", "settings.json"),
+    join11(cwd, ".claude", "settings.local.json")
   ];
 }
 function bigPluginEnabledInSettings(home, cwd) {
@@ -4755,8 +5785,8 @@ function bigPluginEnabledInSettings(home, cwd) {
 function bigPluginBinDir(env) {
   for (const dir of (boardEnv("PATH", env) ?? "").split(delimiter)) {
     if (!dir) continue;
-    const candidate = join10(dir, BIG_PLUGIN_NAME);
-    if (!existsSync16(candidate)) continue;
+    const candidate = join11(dir, BIG_PLUGIN_NAME);
+    if (!existsSync17(candidate)) continue;
     try {
       return dirname6(realpathSync2(candidate));
     } catch {
@@ -4767,7 +5797,7 @@ function bigPluginBinDir(env) {
 }
 function bigPluginHooksFindCli(mode, env) {
   const binDir = bigPluginBinDir(env);
-  return binDir !== null && existsSync16(join10(binDir, HOOK_LAUNCHERS[mode]));
+  return binDir !== null && existsSync17(join11(binDir, HOOK_LAUNCHERS[mode]));
 }
 function bigPluginHooksWouldRun(mode, env, home, cwd) {
   if (!bigPluginHooksFindCli(mode, env)) return false;

@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 // <define:__TASKBOARD_BUILD__>
-var define_TASKBOARD_BUILD_default = { version: "0.2.3", source: "f5e47654", program: "/cyberine-taskboard:tasks" };
+var define_TASKBOARD_BUILD_default = { version: "0.3.0", source: "76471778", program: "/cyberine-taskboard:tasks" };
 
 // src/tasks/boardWrite.ts
 import { existsSync as existsSync11, mkdirSync as mkdirSync7, readFileSync as readFileSync10, writeFileSync as writeFileSync7 } from "node:fs";
