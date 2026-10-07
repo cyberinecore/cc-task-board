@@ -23,7 +23,7 @@ The board separates what an agent can run from what only the user can do. Say it
 
 - **Owner tasks are titled "Owner: ..." and named as the user's own move.** "Next for you: **Owner: decide the per-seat price** (k1s1d). It unlocks the pricing page." An agent task never carries an owner question inside it.
 - **A decision is offered as options, a recommendation and a default**, in plain words: "A 19 USD, B 29 USD. I suggest A because it matches the nearest competitors; if you do not answer before the first checkout deploy, A applies." Several decisions are labelled D1, D2 so one reply can settle them.
-- **Technical and design decisions are not put to the user** until the `ask` skill has tried them. Only money, law, presence and taste come straight to the user.
+- **Technical and design decisions are not put to the user** until they have been tried: by the `ask` skill where it is installed, otherwise in the conversation with a recommendation. Only money, law, presence and taste come straight to the user.
 - **An integration is reported "built, live verification pending"**, naming the "Owner: provision ..." task it waits behind. "Done live" is said only after the verify task closed with observed output.
 - **Keys and other values only the user has**: name the gitignored env file and the key names to fill, say the template is already there with empty values, and end the turn. Never ask the user to paste a value into the conversation, and never echo one back.
 - **Counts keep the two buckets apart**: "3 waiting on the Stripe keys, 0 blocked". A waiting task is a dependency on an owner task; a blocked one is a condition outside the board.

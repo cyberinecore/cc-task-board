@@ -17,7 +17,7 @@ What it does: keeps a backlog in a file inside the repository, so it survives ev
 
 | Command | Started by | For |
 |---|---|---|
-| `/cyberine-taskboard:tasks` | you, or Claude when you talk about the board | what's next (when empty), save this conversation as tasks, start, finish or block a task, recurring chores, the board page |
+| `/cyberine-taskboard:tasks` | you, or Claude when you talk about the board | what's next (when empty), save this conversation as tasks, start, finish or block a task, recurring chores, clean up the board, the board page |
 | `/cyberine-taskboard:init` | you | start a board in this repository |
 | `/cyberine-taskboard:end` | you, or Claude when you say "taskboard end" or "wrap up the taskboard" | wrap up: archive finished tasks, report what is left |
 | `/cyberine-taskboard:help` | you | this page |

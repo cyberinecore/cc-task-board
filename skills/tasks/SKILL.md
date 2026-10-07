@@ -48,6 +48,7 @@ Example: "Việc nên làm tiếp là **Thêm giới hạn đăng nhập** (k3wf
 | "add a recurring task", "every week, remind me to X", "viec dinh ky" | cadence and action; a board chore, not a scheduled job | `tasks recurring add "<title>" --every <N>d\|w\|m --do "<text>"`; did it: `tasks status did <Rxx>`; `tasks recurring list` |
 | "show me the board" | nothing | `tasks board --open` (read-only page at `.local/tasks/board.html`) |
 | "tidy the board", "don dep board" | nothing | `tasks archive`, then `tasks doctor` |
+| "clean up the board", "hygiene pass", "is this board trustworthy" | nothing - preview first, then apply in the same turn | `tasks hygiene`, then `tasks hygiene --apply` - see "The hygiene pass" |
 | "these two are the same" | which survives: richer brief, live deps | `tasks merge <dup-id> <survivor-id>` |
 | "wrap up the taskboard" | nothing | that is `/cyberine-taskboard:end`; a bare "wrap up" is not a board request |
 
@@ -98,15 +99,30 @@ node "${CLAUDE_PLUGIN_ROOT}/cli/tasks.mjs" deps set k2t25 "k1s1d"
 node "${CLAUDE_PLUGIN_ROOT}/cli/tasks.mjs" status unblock k2t25
 ```
 
+## The hygiene pass
+
+The `tasks hygiene` command makes an existing board trustworthy before anything is planned on top of it. It finds four defect classes and the CLI does every deterministic check, so this skill never re-derives them by reading the file.
+
+1. **Preview, always first.** `tasks hygiene` writes nothing (not the manifest, the overlay or the lock) and prints five groups: stale status headers (the manifest bracket lags the overlay), tombstones, dead dep ids, duplicate candidates, and buried decisions. On someone else's mid-flight board, say so before going further; the preview is the safe read.
+2. **Show the user the preview in words, then apply in the same turn** (user ruling 2026-10-05). Say what `--apply` will change and what it will not. Name each buried decision by task and quote the sentence.
+3. **`tasks hygiene --apply`** runs only the mechanical fixes: `tidy` (bakes the stale headers, refreshes the header token list, groups `[forbidden]` blocks at the end), a dead dep repointed ONLY when the dedupe ledger records the merge or the id differs only by letter case, and exact duplicates (same title and same `do:`) merged into the survivor the preview named. A task with another dead dep that has no unambiguous replacement is skipped whole, because `deps set` refuses unknown ids.
+4. **The judgement items are this skill's job, one command each, through `tasks` only.**
+   - A dead dep id the preview could not repoint: read the task, decide whether the dep was a typo, a renamed task or a retired one, then `tasks deps set <id> "<ids>"`. Report the guess instead of making it when two answers are plausible.
+   - A near duplicate: read both briefs (`tasks corpus`), then `tasks merge <dup> <survivor>` or `tasks merge --reject <a> <b>` so the pair is not raised again.
+   - A buried decision, in a `blocker:`, a title or an `update` line: mint `Owner: decide ...` or `Owner: provision ...` (`exec: manual`) with `tasks add`, list its id in the dependent's `deps` (`tasks deps set`), then `tasks status unblock <id>` when it lived in `blocker:`. Follow "Blocked versus waiting" above. A blocker that names a real outside wait (a vendor queue, a legal hold) is not a finding to convert; leave it.
+5. **Close with `tasks tidy`** (new tasks land after the tombstones, and `tidy` regroups them), then `tasks hygiene` and `tasks doctor`. Done means hygiene prints `nothing to fix` and doctor exits 0.
+
+Never remove a `[forbidden]` tombstone; the pass groups it and nothing more. Never rewrite a bare `note:` or `ledger:` line to silence a warning. Buried-decision detection is a keyword heuristic over `blocker:`, titles and `update` lines of non-manual tasks; a task already listing an `Owner:` task in its deps is skipped, so the finding clears as soon as the owner task exists. `--json` emits schema `board-hygiene/1` for a script.
+
 ## Hard rules
 
 - Never hand-type a task id. The CLI mints them; read the id back from the command's output and use that. Ids accept unambiguous prefixes.
 - Never edit a board file directly; see "Never hand-edit the board".
 - Never repair a malformed header yourself. When a command or `tasks doctor` prints `malformed status bracket ... needs a hand-fix` (an empty `[]` or an unknown word in the bracket), quote the line to the user: the task is invisible to every listing until the bracket is fixed.
 - Never write evidence this session did not observe.
-- Never promote a `backlog` task by hand without the user's word. The CLI's promotion policy promotes on its own; a task it keeps (open dep, blocker, autopilot draft, or every task when the policy is `off`) stays until the user says so.
 - Never set `exec`, `model`, `reasoning` or `priority` the user did not state; the CLI owns the defaults.
 - Warnings on lines the board does not recognise (a bare `note:` or `ledger:` from other tooling) are not a defect: never rewrite, strip or rename those lines to silence them.
+- Never move a `backlog` task to `todo` without the user's word.
 
 ## Out of scope
 

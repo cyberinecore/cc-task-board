@@ -4,7 +4,8 @@ All notable changes to Cyberine TaskBoard. Versions follow `version` in `.claude
 
 ## [0.3.0] - 2026-10-07
 
-- Re-vendored from the upstream board source at bae2b084 (CLI build 0.2.3).
+- Re-vendored from the upstream board source at f5e47654 (CLI build 0.2.3).
+- "Clean up the board" runs a hygiene pass: a read-only preview of stale headers, dead dependency ids, duplicate candidates and decisions buried in blockers, then the mechanical fixes.
 - Saving tasks you asked for runs in the same turn: Claude prints the titles and writes them, instead of asking first. A save Claude inferred on its own still asks.
 - What only you can do is its own task: a decision about money, law, a public name or taste becomes "Owner: decide ...", with options, a recommendation and the default if you do not answer; an outside account or key becomes "Owner: provision ...", between the agent's integration task and a live verification task. Work that needs it waits on it instead of being marked blocked.
 - An integration is reported "built, live verification pending" until the live check closes with observed output, and keys are asked for as an empty template in a gitignored env file, never in the chat.

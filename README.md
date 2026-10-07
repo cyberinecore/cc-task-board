@@ -53,6 +53,7 @@ Things to say, with or without `/cyberine-taskboard:tasks` in front:
 - "what's next", "start on the rate limiter", "that's done": Claude answers with the task's title and the board's reason, and closes a task with evidence it observed (an exit code, a response, a line of output), or asks whether to check first or close it as unverified.
 - Vietnamese works too, with or without diacritics: "task nao tiep", "xong roi", "de sau", "ket vi chua co key".
 - "block k7m2q on the vendor review", "unblock k7m2q": a blocker is an outside condition no task can express; a task waiting on another task, including an "Owner: ..." task for a key or a decision, is waiting, not blocked, and is counted separately.
+- "clean up the board": a read-only check for stale headers, dead dependencies, duplicates and decisions buried in blockers, then the mechanical fixes in the same turn.
 - "every Monday, update dependencies": recurring chores with their own cadence.
 - "show me the board": a read-only, self-contained HTML page with a Kanban, a sortable table, recurring, archive and journal tabs.
 
