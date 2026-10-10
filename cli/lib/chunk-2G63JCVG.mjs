@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 // <define:__TASKBOARD_BUILD__>
-var define_TASKBOARD_BUILD_default = { version: "0.3.0", source: "76471778", program: "/cyberine-taskboard:tasks" };
+var define_TASKBOARD_BUILD_default = { version: "0.3.0", source: "9302826c", program: "/cyberine-taskboard:tasks" };
 
 // src/tasks/boardWrite.ts
 import { existsSync as existsSync11, mkdirSync as mkdirSync7, readFileSync as readFileSync10, writeFileSync as writeFileSync7 } from "node:fs";
@@ -700,15 +700,31 @@ function blockRange(lines, id) {
   const b = parseManifestBlocks(lines.join("\n")).blocks.find((x) => x.id === id);
   return b ? { start: b.start, end: b.end } : null;
 }
+function duplicateBlockerWarning(id, target) {
+  return `/cyberine-taskboard:tasks: ${id}: duplicate-of ${target} still carries a blocker; the blocker is ignored for deps, drop it or close the duplicate`;
+}
 function lintManifest(manifestSrc) {
   const warnings = [];
   let inBlock = false;
   const srcLines = manifestSrc.split("\n");
   const fenced = fencedLineFlags(srcLines);
+  let blockId = "";
+  let blockDup = "";
+  let blockHasBlocker = false;
+  const flushBlock = () => {
+    if (blockId && blockDup && blockHasBlocker) {
+      warnings.push(duplicateBlockerWarning(blockId, blockDup));
+    }
+    blockId = "";
+    blockDup = "";
+    blockHasBlocker = false;
+  };
   srcLines.forEach((line, idx) => {
     if (fenced[idx]) return;
     if (/^## /.test(line)) {
+      flushBlock();
       inBlock = LINT_BLOCK_HEADER_RE.test(line);
+      if (inBlock) blockId = /^## (\S+)/.exec(line)[1];
       return;
     }
     if (!inBlock || !line.trim()) return;
@@ -716,6 +732,8 @@ function lintManifest(manifestSrc) {
     if (!m) return;
     const field = m[1];
     const rawValue = m[2];
+    if (field === "duplicate-of" && rawValue.trim()) blockDup = rawValue.trim().split(/[,\s]+/)[0];
+    if (field === "blocker" && rawValue.trim()) blockHasBlocker = true;
     if (!KNOWN_TASK_FIELDS.includes(field) && !field.startsWith(VENDOR_FIELD_PREFIX)) {
       warnings.push(`/cyberine-taskboard:tasks: manifest line ${idx + 1}: unknown field \`${field}:\` -- ${line}`);
       return;
@@ -732,6 +750,7 @@ function lintManifest(manifestSrc) {
       warnings.push(`/cyberine-taskboard:tasks: manifest line ${idx + 1}: possible fused field in \`${field}:\` -- ${line}`);
     }
   });
+  flushBlock();
   return warnings;
 }
 function migrateLegacySource(src) {

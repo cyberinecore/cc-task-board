@@ -89,7 +89,7 @@ import {
   validateDraftReferences,
   writeDraft,
   writeFileAtomic
-} from "./lib/chunk-YYJ7UGUC.mjs";
+} from "./lib/chunk-2G63JCVG.mjs";
 
 // scripts/taskboard-bundle/entry.ts
 import { homedir } from "node:os";
@@ -2021,6 +2021,19 @@ function depSatisfied(depId, doneIds, dupMap) {
   const { target, cycle } = resolveDuplicateOf(dupMap, depId);
   return !cycle && doneIds.has(target);
 }
+function depHops(t, doneIds, dupMap) {
+  const hops = {};
+  for (const d of t.deps) {
+    if (doneIds.has(d) || !dupMap.has(d)) continue;
+    const { target, cycle } = resolveDuplicateOf(dupMap, d);
+    if (!cycle && doneIds.has(target)) hops[d] = target;
+  }
+  return hops;
+}
+function formatDepsList(t, doneIds, dupMap) {
+  const hops = depHops(t, doneIds, dupMap);
+  return t.deps.map((d) => hops[d] ? `${d}->${hops[d]} done` : d).join(",");
+}
 function isRunnableTask(t, doneIds, dupMap) {
   if (t.status !== "todo") return false;
   if (t.blocker) return false;
@@ -2139,7 +2152,7 @@ function formatRunnableSummary(sets, opts) {
   lines.push("Runnable (next to dispatch):");
   for (const t of claimed) {
     let entry = `  ${t.id}  ${t.title}`;
-    if (t.deps.length > 0) entry += `  [deps: ${t.deps.join(",")}]`;
+    if (t.deps.length > 0) entry += `  [deps: ${formatDepsList(t, sets.doneIds, sets.dupMap)}]`;
     if (t.blocker) entry += `  [blocker: ${t.blocker}]`;
     lines.push(entry);
   }
@@ -2551,13 +2564,17 @@ function boardNextJson(scoped, manifest, opts = {}) {
       forbidden: sets.forbidden.length,
       duplicate: sets.duplicate.length
     },
-    runnable: sets.runnable.map((t) => ({
-      id: t.id,
-      title: t.title,
-      priority: t.priority ?? "",
-      deps: t.deps,
-      path: t.path ?? ""
-    })),
+    runnable: sets.runnable.map((t) => {
+      const hops = depHops(t, sets.doneIds, sets.dupMap);
+      return {
+        id: t.id,
+        title: t.title,
+        priority: t.priority ?? "",
+        deps: t.deps,
+        ...Object.keys(hops).length > 0 && { depsVia: hops },
+        path: t.path ?? ""
+      };
+    }),
     waiting: sets.blocked.map((t) => {
       const unmet = missingDeps(t, sets);
       return {
@@ -3363,6 +3380,10 @@ function ensureStaleHeaderNote(src) {
   if (at === -1) return null;
   lines.splice(at + 1, 0, STALE_HEADER_NOTE);
   return lines.join("\n") + (src.endsWith("\n") ? "\n" : "");
+}
+function addStaleHeaderNoteLocked(manifest) {
+  const out2 = ensureStaleHeaderNote(readFileSync12(manifest, "utf8"));
+  return out2 !== null && writeManifestSafely(manifest, out2);
 }
 function groupForbidden(src) {
   const lines = splitLines(src);
@@ -4789,6 +4810,7 @@ ${END_USAGE}`);
   } else {
     try {
       if (archiveLocked(paths, { auto: false }, out).length) process.exitCode = 1;
+      addStaleHeaderNoteLocked(paths.manifest);
     } catch (e) {
       warn(e.message);
       process.exitCode = 1;
