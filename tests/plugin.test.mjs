@@ -297,6 +297,8 @@ test('guard refuses a board edit and passes any other file', () => {
   assert.equal(run(dir, ['guard'], payload('README.md')).status, 0);
   const multi = JSON.stringify({ tool_name: 'MultiEdit', tool_input: { file_path: join(dir, '.local/tasks/ACTIVE.md'), edits: [] }, cwd: dir });
   assert.equal(run(dir, ['guard'], multi).status, 2);
+  const sources = readJson('hooks/hooks.json').hooks.SessionStart[0].matcher.split('|');
+  for (const source of ['startup', 'resume', 'clear', 'compact', 'fork']) assert.ok(sources.includes(source), source);
   const matcher = readJson('hooks/hooks.json').hooks.PreToolUse[0].matcher.split('|');
   for (const tool of ['Write', 'Edit', 'MultiEdit', 'NotebookEdit', 'Bash', 'PowerShell', 'Monitor']) assert.ok(matcher.includes(tool), tool);
 });

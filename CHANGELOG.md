@@ -2,6 +2,10 @@
 
 All notable changes to Cyberine TaskBoard. Versions follow `version` in `.claude-plugin/plugin.json`; each release is tagged `cyberine-taskboard--v<version>`.
 
+## [0.3.1] - 2026-10-21
+
+- The session-start banner now also shows in a forked session (`SessionStart` source `fork`, which Claude Code added alongside `startup`, `resume`, `clear` and `compact`).
+
 ## [0.3.0] - 2026-10-08
 
 - Re-vendored from the upstream board source at 181a6ff6. `--version` now prints the plugin version (0.3.0) instead of the upstream build number.
