@@ -1,103 +1,152 @@
 #!/usr/bin/env node
 import {
-  AmbiguousIdError,
+  SPLIT_SCHEMA_TEXT,
+  addRecurring,
+  claimOwner,
+  dropRecurring,
+  emptyManifestMessage,
+  leaseRefusal,
+  parseSplitInput,
+  readManifestReport,
+  recurringDid,
+  recurringDueCount,
+  recurringList,
+  setRecurring,
+  splitTask
+} from "./lib/chunk-6YK6MUHU.mjs";
+import {
+  analyze,
+  formatReport,
+  gatherDoctorInputs,
+  hasBlockingFindings,
+  missingBriefIssues,
+  missingVerifyIssues
+} from "./lib/chunk-XTWUA5RY.mjs";
+import {
+  addStaleHeaderNoteLocked,
+  analyzeHygiene,
+  applyHygiene,
+  findCandidates,
+  formatHygiene,
+  tidyBoard
+} from "./lib/chunk-JOHVUZOV.mjs";
+import {
+  ownerMixForBlock
+} from "./lib/chunk-UV3X3JLP.mjs";
+import {
+  boardBannerView,
+  boardStatusView,
+  boardView,
+  healthLines,
+  recurringEntries
+} from "./lib/chunk-ZQMU7SWD.mjs";
+import {
+  archiveIdsFor,
+  computeRunnable,
+  depHops,
+  formatRunnableSummary,
+  missingDeps,
+  scopeRunnableSets,
+  submoduleScopeNotice
+} from "./lib/chunk-SH2Y6DI2.mjs";
+import {
   ArchivePartialError,
-  BoardFormatTooNew,
   BoardRejected,
   DEFAULT_TASK_EXEC,
   DEFAULT_TASK_MODEL,
-  ID_SHAPE_RULE,
-  IdClashError,
-  KNOWN_HEADER_ID_RE,
-  RECURRING_ID_RE,
-  RECURRING_ID_SOURCE,
   SCHEMA_TEXT,
   SET_ORDER,
-  TASK_ID_RE,
-  TASK_ID_SOURCE,
-  TASK_STATUSES,
-  TASK_STATUS_SET,
-  VALID_EXEC,
-  VALID_MODELS,
-  VALID_REASONING,
   WRITABLE_STATUSES,
-  agentTag,
-  appendJournalEvents,
-  appendStatus,
   archiveAbortLabel,
   archiveLocked,
   archivedIds,
-  assertBoardWritable,
-  blockRange,
-  boardEnv,
-  boardFormatLine,
-  boardFormatNotice,
-  boardPathsFor,
-  collapseWhitespace,
   convergeApply,
   coreEnd,
   countAllHeaders,
-  define_TASKBOARD_BUILD_default,
-  deriveDayTitle,
   draftNames,
-  ensureMigrated,
-  epochToIsoForTz,
-  epochToLocalIso,
-  fencedLineFlags,
-  fold,
   gatherDrafts,
-  isTaskStatus,
-  lintManifest,
-  listJournalDaysFolded,
-  lock,
-  lockAndMigrate,
   logDone,
-  logLines,
-  looksLikeABoard,
-  malformedIdMessage,
-  manifestCandidates,
   mergeIds,
-  migrateLegacySource,
-  noPromoteActive,
-  nonBlankLineCount,
-  normalizeHost,
-  orderOverlayLines,
-  overlaySources,
-  parseLegacyBoard,
-  parseManifestBlocks,
-  pathInScope,
-  planReconcile,
-  readJournalDayFolded,
-  readLedger,
-  readOverlayText,
-  reconcile,
-  reconcileDryRun,
-  reconcileLocked,
+  rejectDraftErrors,
+  rejectDrafts,
   rejectIds,
-  repoRootStrict,
-  resolveBoard,
   resolveDuplicateOf,
-  resolveIdPrefix,
+  runTaskVerify,
   setBlocker,
   setDeps,
   setFields,
   setFieldsBatch,
   showDeps,
+  validateDraftReferences,
+  writeDraft
+} from "./lib/chunk-66MJ3JXB.mjs";
+import {
+  appendJournalEvents,
+  deriveDayTitle,
+  journalEventRef,
+  listJournalDaysFolded,
+  lock,
+  lockAndMigrate,
+  nextDecisionTimestamp,
+  readJournalDayFolded,
+  readJournalEvents,
+  reconcile,
+  reconcileDryRun,
+  reconcileLocked,
+  unlock,
+  unreviewedDecisionLines,
+  unreviewedDecisions
+} from "./lib/chunk-ODYPGOF4.mjs";
+import {
+  AmbiguousIdError,
+  BoardFormatTooNew,
+  IdClashError,
+  KNOWN_HEADER_ID_RE,
+  RECURRING_ID_RE,
+  RECURRING_ID_SOURCE,
+  TASK_ID_RE,
+  TASK_ID_SOURCE,
+  agentTag,
+  appendStatus,
+  assertBoardIdentity,
+  assertBoardWritable,
+  blockRange,
+  boardEnv,
+  boardFormatLine,
+  boardFormatNotice,
+  boardIdentityProblem,
+  boardPathsFor,
+  collapseWhitespace,
+  define_TASKBOARD_BUILD_default,
+  ensureMigrated,
+  epochToLocalIso,
+  fencedLineFlags,
+  fold,
+  lintManifest,
+  malformedIdMessage,
+  manifestCandidates,
+  migrateLegacySource,
+  noPromoteActive,
+  nonBlankLineCount,
+  overlaySources,
+  parseLegacyBoard,
+  parseManifestBlocks,
+  pathInScope,
+  resolveBoard,
+  resolveIdPrefix,
+  shadowedHubBoard,
   submoduleScope,
   todayLocalDate,
-  unlock,
-  validateDraftReferences,
-  writeDraft,
   writeFileAtomic
-} from "./lib/chunk-2G63JCVG.mjs";
+} from "./lib/chunk-KIJLE46J.mjs";
 
 // scripts/taskboard-bundle/entry.ts
 import { homedir } from "node:os";
 
 // src/commands/tasksBoard.ts
 import { spawnSync as spawnSync2 } from "node:child_process";
-import { existsSync as existsSync16, mkdirSync as mkdirSync3, readFileSync as readFileSync17, statSync as statSync4, writeFileSync as writeFileSync2 } from "node:fs";
-import { basename as basename5, dirname as dirname5, join as join10, resolve as resolve2 } from "node:path";
+import { existsSync as existsSync10, mkdirSync as mkdirSync3, readFileSync as readFileSync11, statSync as statSync2, writeFileSync as writeFileSync2 } from "node:fs";
+import { basename as basename4, dirname as dirname5, join as join7 } from "node:path";
 
 // src/tasks/boardShare.ts
 import { execFileSync } from "node:child_process";
@@ -215,6 +264,7 @@ function initBoard(root, args2) {
   }
   const note = existing && existing !== target ? `note: ${existing} outranks ${target}; commands will continue reading the existing board.
 ` : "";
+  assertBoardIdentity(root, target);
   mkdirSync(dirname(target), { recursive: true });
   mkdirSync(join(root, ".local", "tasks", "drafts", "consumed"), { recursive: true });
   mkdirSync(join(root, ".local", "tasks", "archive"), { recursive: true });
@@ -266,347 +316,13 @@ function relocateBoard(root, args2) {
   return [`relocated: ${source} -> ${target}`, ...alias ? [`  removed symlink: ${alias}`] : [], ...moving.map((name) => `  moved: ${name}`), ...staying.map((name) => `  left in place: ${name}`), ...trackedNote].join("\n");
 }
 
-// src/tasks/boardDoctor.ts
-import { existsSync as existsSync2, readFileSync as readFileSync2, readdirSync } from "node:fs";
-import { join as join2 } from "node:path";
-
-// src/tasks/taskQuality.ts
-var DO_MAX_CHARS = 300;
-var ABBREVIATION_RE = /\b(?:e\.g|i\.e|etc|vs|cf|approx|incl)\./gi;
-var TERMINATOR_RE = /[.!?](?=\s|$)/g;
-function doSentenceCount(doText) {
-  const prose = doText.replace(/`[^`]*`/g, "CODE").replace(ABBREVIATION_RE, "ABBR").replace(/\b\d+\.\d+/g, "NUM").trim();
-  if (prose === "") return 0;
-  const terminators = prose.match(TERMINATOR_RE)?.length ?? 0;
-  const endsTerminated = /[.!?]$/.test(prose);
-  return terminators + (endsTerminated ? 0 : 1);
-}
-function taskQualityIssues(task) {
-  const issues = [];
-  const text = task.do.trim();
-  const sentences = doSentenceCount(text);
-  if (sentences > 1) issues.push(`do: reads as ${sentences} sentences (the manifest standard is one imperative sentence; move detail into the brief)`);
-  if (text.length > DO_MAX_CHARS) issues.push(`do: is ${text.length} characters (over ${DO_MAX_CHARS}; move detail into the brief)`);
-  if ((task.effort === "M" || task.effort === "L") && !task.hasBrief) {
-    issues.push(`effort ${task.effort} task has no brief (write one with --brief-file, or through save)`);
-  }
-  return issues;
-}
-
-// src/tasks/boardDoctor.ts
-var LOWER_BOUND_NOTE = "(lower bound -- a malformed header exists and can hide its own collision; fix section 1 first, then re-run)";
-var HELD_HEADER_RE = /^## ([A-Za-z0-9]+) \[([^\]]*)\](?: |$)/;
-function findHeldFlips(manifestSrc, overlayRaw, now) {
-  const last = /* @__PURE__ */ new Map();
-  for (const line of overlayRaw.split("\n")) {
-    if (line === "") continue;
-    const fields = line.split("	");
-    if (fields.length < 4) continue;
-    const epoch = Number(fields[0]);
-    last.set(fields[2], { status: fields[3], epoch: Number.isFinite(epoch) ? epoch : 0 });
-  }
-  if (last.size === 0) return [];
-  const srcLines = manifestSrc.split("\n");
-  const fenced = fencedLineFlags(srcLines);
-  const held = [];
-  for (const [i, line] of srcLines.entries()) {
-    if (fenced[i]) continue;
-    const m = HELD_HEADER_RE.exec(line);
-    if (!m) continue;
-    if (m[2].trim() !== "") continue;
-    const entry = last.get(m[1]);
-    if (entry === void 0) continue;
-    held.push({
-      id: m[1],
-      status: entry.status,
-      epoch: entry.epoch,
-      ageDays: entry.epoch > 0 ? Math.floor((now - entry.epoch * 1e3) / 864e5) : 0
-    });
-  }
-  return held;
-}
-function hasBlockingFindings(r) {
-  const manifestCount = r.headerCounts.find((c) => c.source === "manifest");
-  return r.ghosts.some((g) => g.source === "manifest") || (manifestCount ? manifestCount.raw !== manifestCount.parsed : false) || r.boardFormat === "unparsable" || r.boardFormat === "legacy-list-item" || r.boardFormat === "legacy-dashed-header";
-}
-function line1(b) {
-  return b.start + 1;
-}
-function findPrefixPairs(ids) {
-  const sorted = [...new Set(ids)].sort();
-  const groups = /* @__PURE__ */ new Map();
-  const stack = [];
-  for (const id of sorted) {
-    while (stack.length > 0 && !id.startsWith(stack[stack.length - 1])) stack.pop();
-    for (const shorter of stack) {
-      const g = groups.get(shorter);
-      if (g) g.push(id);
-      else groups.set(shorter, [id]);
-    }
-    stack.push(id);
-  }
-  return [...groups.entries()].map(([shorter, longerIds]) => ({ shorter, longerIds }));
-}
-var SEP = "[ \\t\\u00a0]";
-var RAW_HEADER_RE = new RegExp(`^${SEP}{0,3}##${SEP}+(\\S+)${SEP}+\\[`);
-var RAW_HEADER_TITLE_RE = new RegExp(`^${SEP}{0,3}##${SEP}+\\S+${SEP}+\\[[^\\]]*\\]${SEP}?(.*)$`);
-var CR_RE = /\r/;
-function scanRawHeaders(src, source) {
-  let raw = 0;
-  const ghosts = [];
-  const lines = src.split("\n");
-  const fenced = fencedLineFlags(lines);
-  lines.forEach((line, i) => {
-    if (fenced[i]) return;
-    const m = RAW_HEADER_RE.exec(line);
-    if (!m) return;
-    raw++;
-    const id = m[1];
-    if (KNOWN_HEADER_ID_RE.test(id)) return;
-    ghosts.push({ source, id, line: i + 1, title: (RAW_HEADER_TITLE_RE.exec(line)?.[1] ?? "").trim() });
-  });
-  return { raw, ghosts };
-}
-function analyze(inputs) {
-  const manifestAll = inputs.manifestSrc ? parseManifestBlocks(inputs.manifestSrc) : { blocks: [], warnings: [], legacy: void 0 };
-  const archiveAll = inputs.archiveSrc ? parseManifestBlocks(inputs.archiveSrc) : { blocks: [], warnings: [], legacy: void 0 };
-  const malformed = [
-    ...manifestAll.blocks.filter((b) => b.malformed).map((b) => ({ source: "manifest", id: b.id, bracket: b.bracket, line: line1(b) })),
-    ...archiveAll.blocks.filter((b) => b.malformed).map((b) => ({ source: "archive", id: b.id, bracket: b.bracket, line: line1(b) }))
-  ];
-  const ORPHAN_WARNING = "task header with no parsable [status] bracket";
-  const orphanHeaders = [
-    ...manifestAll.warnings.filter((w) => w.includes(ORPHAN_WARNING)).map((w) => `manifest -- ${w.split("manifest line ")[1] ?? w}`),
-    ...archiveAll.warnings.filter((w) => w.includes(ORPHAN_WARNING)).map((w) => `archive -- ${w.split("manifest line ")[1] ?? w}`)
-  ];
-  const manifestTasks = manifestAll.blocks.filter((b) => TASK_ID_RE.test(b.id));
-  const archiveTasks = archiveAll.blocks.filter((b) => TASK_ID_RE.test(b.id));
-  const bySource = /* @__PURE__ */ new Map();
-  for (const b of manifestTasks) {
-    const cur = bySource.get(b.id) ?? { manifest: 0, archive: 0 };
-    cur.manifest++;
-    bySource.set(b.id, cur);
-  }
-  for (const b of archiveTasks) {
-    const cur = bySource.get(b.id) ?? { manifest: 0, archive: 0 };
-    cur.archive++;
-    bySource.set(b.id, cur);
-  }
-  const duplicates2 = [...bySource.entries()].map(([id, counts]) => ({ id, count: counts.manifest + counts.archive, bySource: counts })).filter((d) => d.count > 1).sort((a, b) => a.id < b.id ? -1 : a.id > b.id ? 1 : 0);
-  const stranded = manifestTasks.filter((b) => b.malformed && b.status === "done").map((b) => ({ id: b.id, bracket: b.bracket, line: line1(b) }));
-  const allTaskIds = [...manifestTasks, ...archiveTasks].map((b) => b.id);
-  const ambiguousPrefixes = findPrefixPairs(allTaskIds);
-  const knownIds = new Set(allTaskIds);
-  const briefIdSet = /* @__PURE__ */ new Set();
-  const orphanBriefs = [];
-  for (const id of inputs.briefIds) {
-    briefIdSet.add(id);
-    if (!knownIds.has(id)) orphanBriefs.push({ id, path: `${id}.md` });
-  }
-  for (const id of inputs.archiveBriefIds) {
-    briefIdSet.add(id);
-    if (!knownIds.has(id)) orphanBriefs.push({ id, path: `archive/${id}.md` });
-  }
-  orphanBriefs.sort((a, b) => a.path < b.path ? -1 : a.path > b.path ? 1 : 0);
-  const missingBriefIds = [...knownIds].filter((id) => !briefIdSet.has(id)).sort();
-  const boardLineCount = nonBlankLineCount(inputs.manifestSrc);
-  const boardFormat = manifestAll.legacy ? manifestAll.legacy === "list-item" ? "legacy-list-item" : "legacy-dashed-header" : manifestAll.blocks.length > 0 ? "canonical" : looksLikeABoard(inputs.manifestSrc) ? "unparsable" : "empty";
-  const boardTaskCount = manifestAll.blocks.length;
-  const manifestScan = scanRawHeaders(inputs.manifestSrc, "manifest");
-  const archiveScan = scanRawHeaders(inputs.archiveSrc, "archive");
-  const ghosts = [...manifestScan.ghosts, ...archiveScan.ghosts];
-  const headerCounts = [
-    {
-      source: "manifest",
-      raw: manifestScan.raw,
-      parsed: manifestAll.blocks.filter((b) => KNOWN_HEADER_ID_RE.test(b.id)).length,
-      hasCr: CR_RE.test(inputs.manifestSrc)
-    },
-    {
-      source: "archive",
-      raw: archiveScan.raw,
-      parsed: archiveAll.blocks.filter((b) => KNOWN_HEADER_ID_RE.test(b.id)).length,
-      hasCr: CR_RE.test(inputs.archiveSrc)
-    }
-  ];
-  const forbiddenNoReason = [];
-  const strayReasons = [];
-  for (const b of manifestTasks) {
-    const hasReason = b.fields.has("reason");
-    const reason = (b.fields.get("reason") ?? "").trim();
-    if (b.status === "forbidden" && reason === "") forbiddenNoReason.push({ id: b.id, status: b.status ?? "-", line: line1(b) });
-    if (b.status !== "forbidden" && hasReason) strayReasons.push({ id: b.id, status: b.status ?? "-", line: line1(b) });
-  }
-  return {
-    boardFormat,
-    boardTaskCount,
-    boardLineCount,
-    malformed,
-    orphanHeaders,
-    duplicates: duplicates2,
-    stranded,
-    ambiguousPrefixes,
-    orphanBriefs,
-    missingBriefIds,
-    ghosts,
-    headerCounts,
-    forbiddenNoReason,
-    strayReasons,
-    heldFlips: findHeldFlips(inputs.manifestSrc, inputs.overlayRaw ?? "", inputs.now ?? Date.now()),
-    qualityIssues: manifestTasks.filter((b) => b.status === "todo" || b.status === "doing" || b.status === "backlog").map((b) => ({
-      id: b.id,
-      line: line1(b),
-      issues: taskQualityIssues({ do: b.fields.get("do") ?? "", effort: b.fields.get("effort")?.trim(), hasBrief: briefIdSet.has(b.id) })
-    })).filter((q) => q.issues.length > 0)
-  };
-}
-function listBriefIds(dir) {
-  if (!existsSync2(dir)) return [];
-  const ids = [];
-  for (const name of readdirSync(dir)) {
-    const m = /^(.+)\.md$/.exec(name);
-    if (!m) continue;
-    if (!TASK_ID_RE.test(m[1])) continue;
-    ids.push(m[1]);
-  }
-  return ids;
-}
-function gatherDoctorInputs(paths) {
-  return {
-    manifestSrc: existsSync2(paths.manifest) ? readFileSync2(paths.manifest, "utf8") : "",
-    archiveSrc: existsSync2(paths.archive) ? readFileSync2(paths.archive, "utf8") : "",
-    briefIds: listBriefIds(paths.tasksDir),
-    archiveBriefIds: listBriefIds(join2(paths.tasksDir, "archive")),
-    overlayRaw: orderOverlayLines(overlaySources(paths)).text
-  };
-}
-function formatReport(r) {
-  const lines = [];
-  const none = "  (none found)";
-  lines.push("/cyberine-taskboard:tasks doctor -- read-only board integrity report");
-  lines.push("");
-  if (r.boardFormat !== "canonical" && r.boardFormat !== "empty") {
-    lines.push(
-      r.boardFormat === "unparsable" ? "7) BOARD FORMAT -- read this first: every count below is about a board nothing can parse" : "7) BOARD FORMAT -- this board is in a legacy format and needs converting"
-    );
-    if (r.boardFormat === "unparsable") {
-      lines.push(`  ${r.boardLineCount} non-blank line(s), 0 task blocks, and no legacy shape the board tool recognises.`);
-      lines.push('  Nothing here matches "## <id> [<status>] <title>". Every command reads this board as EMPTY.');
-      lines.push("  Recognised legacy shapes, both anchored at line start:");
-      lines.push("    - [done] T1 -- title      (list item, optional **bold** id)");
-      lines.push("    ## T001 -- Title          (dashed header, with **Do:** / **Done when:** lines)");
-    } else {
-      const kind = r.boardFormat === "legacy-list-item" ? "list-item" : "dashed-header";
-      lines.push(`  legacy ${kind} format -- ${r.boardTaskCount} task(s), readable only through the compatibility layer.`);
-      lines.push("  Reads fine today; the next command that WRITES the board will auto-convert it (backup first).");
-      lines.push("  To convert now, deliberately:  /cyberine-taskboard:tasks migrate --dry   then   /cyberine-taskboard:tasks migrate");
-    }
-    lines.push("");
-  }
-  lines.push("1) Malformed status brackets");
-  if (r.malformed.length === 0 && r.orphanHeaders.length === 0) {
-    lines.push(none);
-  } else {
-    for (const m of r.malformed) lines.push(`  ${m.source}:${m.id} line ${m.line} -- bracket "[${m.bracket}]"`);
-    for (const o of r.orphanHeaders) lines.push(`  ${o}`);
-  }
-  lines.push("");
-  lines.push(
-    `2) Duplicate ids (manifest + archive combined)${r.malformed.length + r.orphanHeaders.length > 0 ? ` ${LOWER_BOUND_NOTE}` : ""}`
-  );
-  if (r.duplicates.length === 0) {
-    lines.push(none);
-  } else {
-    for (const d of r.duplicates) {
-      lines.push(`  ${d.id}: ${d.count} occurrences (manifest: ${d.bySource.manifest}, archive: ${d.bySource.archive})`);
-    }
-  }
-  lines.push("");
-  lines.push("3) [done] tasks stranded in the manifest (malformed bracket, can never archive as-is)");
-  if (r.stranded.length === 0) {
-    lines.push(none);
-  } else {
-    for (const s of r.stranded) lines.push(`  ${s.id} line ${s.line} -- bracket "[${s.bracket}]"`);
-  }
-  lines.push("");
-  lines.push("4) Ambiguous id prefixes (one id silently shadows another on exact-match resolution)");
-  if (r.ambiguousPrefixes.length === 0) {
-    lines.push(none);
-  } else {
-    for (const p of r.ambiguousPrefixes) lines.push(`  ${p.shorter} shadows: ${p.longerIds.join(", ")}`);
-  }
-  lines.push("");
-  lines.push("5) Task briefs");
-  lines.push("  orphan briefs (file exists, id matches nothing in manifest or archive):");
-  if (r.orphanBriefs.length === 0) {
-    lines.push("    (none found)");
-  } else {
-    for (const o of r.orphanBriefs) lines.push(`    tasks/${o.path}`);
-  }
-  lines.push(
-    `  missing briefs (informational only -- older tasks legitimately predate briefs): ${r.missingBriefIds.length} id(s)`
-  );
-  if (r.missingBriefIds.length > 0) lines.push(`    ${r.missingBriefIds.join(", ")}`);
-  lines.push("");
-  lines.push(
-    "6) Ghost task ids (header id outside the minted id space -- invisible to every command, this report included)"
-  );
-  lines.push("  header counts (raw scan vs strict parse -- any gap is a finding):");
-  for (const c of r.headerCounts) {
-    const gap = c.raw === c.parsed ? "ok" : `GAP: ${c.raw - c.parsed} header(s) no command can see`;
-    lines.push(`    ${c.source.padEnd(8)} ${c.raw} raw header(s), ${c.parsed} parsed -- ${gap}`);
-    if (c.raw !== c.parsed && c.hasCr) {
-      lines.push("      ^ this file contains CR (CRLF) line endings -- that alone makes every header unparsable.");
-      lines.push("        Convert it to LF first, then re-run; the ids below (if any) may be fine.");
-    }
-  }
-  if (r.ghosts.length === 0) {
-    lines.push(none);
-  } else {
-    for (const g of r.ghosts) {
-      lines.push(`  ${g.source.padEnd(8)} line ${g.line} -- id "${g.id}"${g.title ? `: ${g.title}` : ""}`);
-    }
-    lines.push(`  ${ID_SHAPE_RULE}.`);
-    lines.push("  -> fix by hand: no command can resolve a ghost id (merge/set/status all filter by id shape first).");
-    lines.push(
-      "     Either replace the id with a real minted one, or re-create the task via `/cyberine-taskboard:tasks save` and delete the ghost block; then re-run doctor."
-    );
-    if (r.ghosts.some((g) => g.source === "archive")) {
-      lines.push(
-        "     Archive ghosts are history and do not fail this report -- re-iding an archived task breaks every doc, handoff and dep that cites it."
-      );
-    }
-  }
-  lines.push("");
-  lines.push("8) Forbidden tombstones (informational -- never fails this report)");
-  lines.push("  [forbidden] blocks missing a reason: line (the manifest template asks for one):");
-  if (r.forbiddenNoReason.length === 0) lines.push(none);
-  for (const t of r.forbiddenNoReason) lines.push(`  line ${t.line} -- ${t.id} [forbidden] has no reason:`);
-  lines.push("  reason: lines on a block that is NOT [forbidden] (a released or hand-resurrected tombstone; this report cannot tell which):");
-  if (r.strayReasons.length === 0) lines.push(none);
-  for (const t of r.strayReasons) lines.push(`  line ${t.line} -- ${t.id} [${t.status}] still carries reason:`);
-  lines.push("");
-  lines.push("9) Held flips (informational -- never fails this report)");
-  lines.push("  flips reconcile is holding because the header bracket is empty ([]); repair the bracket and they bake with their original date:");
-  if (r.heldFlips.length === 0) lines.push(none);
-  for (const h of r.heldFlips) {
-    const age = h.epoch > 0 ? `${h.ageDays}d old (${epochToIsoForTz(h.epoch, void 0)})` : "age unknown";
-    lines.push(`  ${h.id} -- held "${h.status}" flip, ${age}`);
-  }
-  lines.push("");
-  lines.push("10) Task quality (informational -- never fails this report)");
-  lines.push("  open tasks short of the manifest standard (one-sentence do:, a brief for effort M and L):");
-  if (r.qualityIssues.length === 0) lines.push(none);
-  for (const q of r.qualityIssues) for (const issue of q.issues) lines.push(`  line ${q.line} -- ${q.id}: ${issue}`);
-  return lines.join("\n");
-}
-
 // src/tasks/boardShellGuard.ts
-import { existsSync as existsSync3, statSync } from "node:fs";
+import { existsSync as existsSync2, statSync } from "node:fs";
 import { join as join3, posix as posix2 } from "node:path";
 
 // src/tasks/boardGuard.ts
-import { basename as basename2, posix } from "node:path";
+import { realpathSync as realpathSync2 } from "node:fs";
+import { basename as basename2, dirname as dirname2, join as join2, posix, resolve } from "node:path";
 var BOARD_RULE_QUOTE = 'Every change to the board goes through a `/cyberine-taskboard:tasks` subcommand. To a session these files are read-only: the manifest, TASKS_ARCHIVE.md beside it, status.log, and everything under status.d/ and journal/. Reading them is fine. Writing them by any other route is a hand-edit, whatever the tool.';
 var BOARD_PATH_PATTERNS = [
   /(^|\/)\.local\/tasks\/ACTIVE\.md$/i,
@@ -631,6 +347,40 @@ function isBoardPath(path) {
   if (norm === "") return false;
   return BOARD_PATH_PATTERNS.some((re) => re.test(norm));
 }
+function realTarget(path) {
+  let parent = path;
+  const rest = [];
+  for (; ; ) {
+    try {
+      return normalBoardPath(join2(realpathSync2(parent), ...rest));
+    } catch {
+      const next = dirname2(parent);
+      if (next === parent) return normalBoardPath(path);
+      rest.unshift(basename2(parent));
+      parent = next;
+    }
+  }
+}
+function fileBoardMatcher(cwd) {
+  let protectedFiles;
+  let protectedDirs = [];
+  return (path) => {
+    if (path === "") return false;
+    const absolute = resolve(cwd, normalBoardPath(path));
+    const target = realTarget(absolute).toLowerCase();
+    if (isBoardPath(path) || isBoardPath(absolute) || isBoardPath(target)) return true;
+    if (protectedFiles === void 0) {
+      try {
+        const board = resolveBoard(cwd);
+        protectedFiles = [board.manifest, board.archive, board.log, board.ledger].map((p) => realTarget(p).toLowerCase());
+        protectedDirs = [board.statusDir, board.tasksDir, board.journalDir].map((p) => realTarget(p).toLowerCase());
+      } catch {
+        protectedFiles = [];
+      }
+    }
+    return protectedFiles.includes(target) || protectedDirs.some((dir) => target === dir || target.startsWith(`${dir}/`));
+  };
+}
 var DESTINATION_LAST_VERBS = /* @__PURE__ */ new Set(["mv", "cp", "rsync", "ln", "install"]);
 var WRITES_ANY_ARG_VERBS = /* @__PURE__ */ new Set(["tee", "truncate", "rm", "unlink", "touch", "dd", "patch", "shred"]);
 function segmentsOf(command) {
@@ -646,10 +396,80 @@ function verbOf(tokens) {
   }
   return { verb: basename2(tokens[i] ?? ""), rest: tokens.slice(i + 1) };
 }
+var REDIRECT_RE = /(?:^|[^>\d])>{1,2}\|?\s*(['"]?)([^\s'";|&)]+)\1/g;
+function quotedMask(text) {
+  const mask = new Array(text.length).fill(false);
+  let quote = "";
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i];
+    if (quote === "'") {
+      mask[i] = true;
+      if (ch === "'") quote = "";
+      continue;
+    }
+    if (quote === '"') {
+      mask[i] = true;
+      if (ch === "\\" && i + 1 < text.length) {
+        mask[++i] = true;
+        continue;
+      }
+      if (ch === '"') quote = "";
+      continue;
+    }
+    if (ch === "\\" && i + 1 < text.length) {
+      mask[i] = true;
+      mask[++i] = true;
+      continue;
+    }
+    if (ch === "'" || ch === '"') {
+      mask[i] = true;
+      quote = ch;
+    }
+  }
+  return quote === "" ? mask : null;
+}
+function topLevelSegments(text, mask) {
+  const out2 = [];
+  let start = 0;
+  const flush = (end) => {
+    const raw = text.slice(start, end);
+    const lead = raw.length - raw.trimStart().length;
+    const body = raw.trim();
+    if (body !== "") out2.push({ text: body, mask: mask.slice(start + lead, start + lead + body.length) });
+  };
+  for (let i = 0; i < text.length; i++) {
+    if (!mask[i] && /[;|&\n]/.test(text[i])) {
+      flush(i);
+      start = i + 1;
+    }
+  }
+  flush(text.length);
+  return out2;
+}
+function isTasksCli(segment) {
+  const { verb, rest } = verbOf(tokensOf(segment));
+  return verb === "cyberine" && rest[0] === "tasks";
+}
+function tasksCliWritesBoard(segment) {
+  const unquoted = segment.text.split("").filter((_, i) => !segment.mask[i]).join("");
+  if (/[`(]/.test(unquoted) || /\$\(|`|\$'/.test(segment.text)) return coarseBashWritesBoard(segment.text.replace(/\$\(|[`()]/g, ";"));
+  for (const match of segment.text.matchAll(REDIRECT_RE)) {
+    const at = (match.index ?? 0) + (match[0].startsWith(">") ? 0 : 1);
+    if (!segment.mask[at] && isBoardPath(match[2] ?? "")) return true;
+  }
+  return false;
+}
 function bashWritesBoard(command) {
   const text = String(command ?? "");
   if (text.trim() === "") return false;
-  for (const match of text.matchAll(/(?:^|[^>\d])>{1,2}\|?\s*(['"]?)([^\s'";|&)]+)\1/g)) {
+  const mask = quotedMask(text);
+  if (mask === null) return coarseBashWritesBoard(text);
+  const segments = topLevelSegments(text, mask);
+  if (!segments.some((s) => isTasksCli(s.text))) return coarseBashWritesBoard(text);
+  return segments.some((s) => isTasksCli(s.text) ? tasksCliWritesBoard(s) : coarseBashWritesBoard(s.text));
+}
+function coarseBashWritesBoard(text) {
+  for (const match of text.matchAll(REDIRECT_RE)) {
     if (isBoardPath(match[2] ?? "")) return true;
   }
   for (const segment of segmentsOf(text)) {
@@ -690,7 +510,7 @@ function boardGuardDecision(payload) {
   const input = payload.tool_input ?? {};
   if (FILE_TOOLS.has(tool)) {
     const path = String(input["file_path"] ?? input["path"] ?? input["notebook_path"] ?? "");
-    if (isBoardPath(path)) {
+    if (fileBoardMatcher(payload.cwd || process.cwd())(path)) {
       return {
         blocked: true,
         reason: `${tool} refused: ${basename2(path)} is a TaskBoard board file and this session may only READ it.
@@ -702,7 +522,7 @@ Use \`/cyberine-taskboard:tasks\` (or \`node \${CLAUDE_PLUGIN_ROOT}/cli/tasks.mj
   }
   if (tool === "apply_patch") {
     const patch = String(input["command"] ?? input["input"] ?? input["patch"] ?? "");
-    const hit = patchPaths(patch).find((p) => isBoardPath(p));
+    const hit = patchPaths(patch).find(fileBoardMatcher(payload.cwd || process.cwd()));
     if (hit !== void 0) {
       return {
         blocked: true,
@@ -815,7 +635,7 @@ function lex(command, { splitParens, subexprs }) {
   const segments = [];
   let tokens = [];
   let cur = null;
-  let quote2 = null;
+  let quote = null;
   let redirect = false;
   let listNext = false;
   const start = () => cur ??= { text: "", quoted: false, single: false };
@@ -862,26 +682,26 @@ function lex(command, { splitParens, subexprs }) {
   };
   for (let i = 0; i < command.length; i++) {
     const ch = command[i];
-    if (quote2 === "'") {
+    if (quote === "'") {
       if (ch === "'" && command[i + 1] === "'") {
         cur.text += "'";
         i++;
         continue;
       }
       if (ch === "'") {
-        quote2 = null;
+        quote = null;
         continue;
       }
       cur.text += ch;
       continue;
     }
-    if (quote2 === '"') {
+    if (quote === '"') {
       if (ch === "`" && i + 1 < command.length) {
         cur.text += command[++i];
         continue;
       }
       if (ch === '"') {
-        quote2 = null;
+        quote = null;
         continue;
       }
       if (ch === "$" && command[i + 1] === "(") {
@@ -941,7 +761,7 @@ ${command[i + 1]}@`, i + 2);
         token.quoted = true;
         token.single = ch === "'";
       }
-      quote2 = ch;
+      quote = ch;
       continue;
     }
     if (ch === ">") {
@@ -1015,15 +835,15 @@ ${command[i + 1]}@`, i + 2);
 }
 function matchParen(command, open) {
   let depth = 0;
-  let quote2 = null;
+  let quote = null;
   for (let j = open; j < command.length; j++) {
     const c = command[j];
-    if (quote2 !== null) {
-      if (c === "`" && quote2 === '"') j++;
-      else if (c === quote2) quote2 = null;
+    if (quote !== null) {
+      if (c === "`" && quote === '"') j++;
+      else if (c === quote) quote = null;
       continue;
     }
-    if (c === "'" || c === '"') quote2 = c;
+    if (c === "'" || c === '"') quote = c;
     else if (c === "(") depth++;
     else if (c === ")" && --depth === 0) return j;
   }
@@ -1031,25 +851,25 @@ function matchParen(command, open) {
 }
 function literalItems(inner) {
   const parts = [];
-  let quote2 = null;
+  let quote = null;
   let cur = "";
   for (let j = 0; j < inner.length; j++) {
     const c = inner[j];
-    if (quote2 !== null) {
-      if (c === "`" && quote2 === '"' && j + 1 < inner.length) {
+    if (quote !== null) {
+      if (c === "`" && quote === '"' && j + 1 < inner.length) {
         cur += c + inner[++j];
         continue;
       }
-      if (c === quote2 && quote2 === "'" && inner[j + 1] === "'") {
+      if (c === quote && quote === "'" && inner[j + 1] === "'") {
         cur += "''";
         j++;
         continue;
       }
-      if (c === quote2) quote2 = null;
+      if (c === quote) quote = null;
       cur += c;
       continue;
     }
-    if (c === "'" || c === '"') quote2 = c;
+    if (c === "'" || c === '"') quote = c;
     if (c === ",") {
       parts.push(cur);
       cur = "";
@@ -1143,7 +963,7 @@ function mergeConcat(words) {
   return out2;
 }
 function commandTargets(tokens, state, out2, ctx) {
-  const resolve3 = (token) => {
+  const resolve4 = (token) => {
     if (token.single) {
       state.literals.add(token.text);
       return [token.text];
@@ -1168,17 +988,17 @@ function commandTargets(tokens, state, out2, ctx) {
     state.vars.set(name, value);
     if (name === "$whatifpreference") state.whatIfAll = value.some((v2) => /^(?:\$?true|1)$/i.test(v2));
   };
-  for (const t of tokens) if (t.redirect) push(...resolve3(t));
+  for (const t of tokens) if (t.redirect) push(...resolve4(t));
   let words = mergeConcat(tokens.filter((t) => !t.redirect));
   const assignment = assignmentOf(words);
   if (assignment) {
     if (assignment.inline) {
-      assign(assignment.name, resolve3(assignment.inline));
+      assign(assignment.name, resolve4(assignment.inline));
       return;
     }
     const rest2 = words.slice(assignment.skip);
     if (rest2.length > 0 && rest2.every((t, i) => t.quoted || varName(t.text) || /^\$(?:true|false|null)$/i.test(t.text) || i > 0 && t.list)) {
-      assign(assignment.name, rest2.flatMap(resolve3));
+      assign(assignment.name, rest2.flatMap(resolve4));
       return;
     }
     words = rest2;
@@ -1208,30 +1028,30 @@ function commandTargets(tokens, state, out2, ctx) {
   let whatIf = false;
   const takeList = (i, first) => {
     const group = [...first];
-    while (rest[i + 1]?.list) group.push(...resolve3(rest[++i]));
+    while (rest[i + 1]?.list) group.push(...resolve4(rest[++i]));
     return [i, group];
   };
   for (let i = 0; i < rest.length; i++) {
     const p = param(rest[i]);
     let group;
     if (p === null) {
-      [i, group] = takeList(i, resolve3(rest[i]));
+      [i, group] = takeList(i, resolve4(rest[i]));
       groups.push(group);
       continue;
     }
     if (p.name === "whatif") {
-      const flag = p.inline === null ? "$true" : resolve3({ text: p.inline, quoted: false, single: false })[0];
+      const flag = p.inline === null ? "$true" : resolve4({ text: p.inline, quoted: false, single: false })[0];
       if (!/^(?:\$false|0|)$/i.test(flag)) whatIf = true;
       continue;
     }
     if (p.inline !== null && p.inline !== "") {
-      [i, group] = takeList(i, resolve3({ text: p.inline, quoted: false, single: false }));
+      [i, group] = takeList(i, resolve4({ text: p.inline, quoted: false, single: false }));
     } else if (p.inline === "" && rest[i + 1]) {
       i++;
-      [i, group] = takeList(i, resolve3(rest[i]));
+      [i, group] = takeList(i, resolve4(rest[i]));
     } else if (p.inline === null && p.takesValue && rest[i + 1] && param(rest[i + 1]) === null) {
       i++;
-      [i, group] = takeList(i, resolve3(rest[i]));
+      [i, group] = takeList(i, resolve4(rest[i]));
     } else {
       continue;
     }
@@ -1267,16 +1087,16 @@ function commandTargets(tokens, state, out2, ctx) {
   push(...values("outfile", "redirectstandardoutput", "redirectstandarderror"));
   if (BASH_SHELLS.has(verb)) {
     const c = rest.findIndex((t) => !t.quoted && /^-[a-z]*c$/.test(t.text));
-    if (c >= 0 && rest[c + 1]) out2.bash.push(...resolve3(rest[c + 1]));
+    if (c >= 0 && rest[c + 1]) out2.bash.push(...resolve4(rest[c + 1]));
     return;
   }
   if (verb === "wsl" || verb === "wsl.exe") {
-    out2.bash.push(rest.flatMap(resolve3).join(" "));
+    out2.bash.push(rest.flatMap(resolve4).join(" "));
     return;
   }
   if (NESTED_SHELLS.has(verb)) {
     const inner = rest.filter((t) => t.quoted || !/^[-/](?:c|k|command|noprofile|noninteractive|nologo|executionpolicy|bypass)$/i.test(t.text));
-    out2.nested.push(inner.flatMap(resolve3).join(" "));
+    out2.nested.push(inner.flatMap(resolve4).join(" "));
     return;
   }
   if (ctx.dialect === "bash" ? !BASH_WRITE_VERBS.has(verb) : !WRITE_VERBS.has(verb)) return;
@@ -1611,7 +1431,7 @@ function boardFilesUnder(container, cwd) {
   const coversAll = where.rel === "" || where.up.split("/")[0] !== "..";
   return BOARD_FILES.filter((file) => {
     if (!coversAll && !`${file.toLowerCase()}/`.startsWith(`${where.rel}/`)) return false;
-    return existsSync3(join3(cwd, file));
+    return existsSync2(join3(cwd, file));
   });
 }
 function globRegex(glob) {
@@ -1636,7 +1456,7 @@ function boardFilesMatching(glob, cwd) {
   return BOARD_FILES.filter((file) => {
     const parts = file.toLowerCase().split("/");
     const hit = parts.some((_, i) => re.test(parts.slice(0, i + 1).join("/")));
-    return hit && existsSync3(join3(cwd, file));
+    return hit && existsSync2(join3(cwd, file));
   });
 }
 function isDirectory(path, cwd) {
@@ -1749,7 +1569,7 @@ function shellBoardGuardDecision(payload) {
 }
 
 // src/tasks/boardDrop.ts
-import { existsSync as existsSync4, readFileSync as readFileSync3, rmSync } from "node:fs";
+import { existsSync as existsSync3, readFileSync as readFileSync2, rmSync } from "node:fs";
 import { join as join4 } from "node:path";
 function listDeps(block) {
   const raw = (block.fields.get("deps") ?? "").trim();
@@ -1763,9 +1583,9 @@ function resolveIdPrefixSafe(candidate, ids) {
   }
 }
 function planDrop(paths, rawIds) {
-  const live = parseManifestBlocks(readFileSync3(paths.manifest, "utf8")).blocks;
+  const live = parseManifestBlocks(readFileSync2(paths.manifest, "utf8")).blocks;
   const archived = parseManifestBlocks(
-    existsSync4(paths.archive) ? readFileSync3(paths.archive, "utf8") : ""
+    existsSync3(paths.archive) ? readFileSync2(paths.archive, "utf8") : ""
   ).blocks;
   const effective = new Map(fold(paths.manifest, paths).map((t) => [t.id, t.status]));
   const knownIds = new Set([...live, ...archived].map((b) => b.id));
@@ -1777,15 +1597,15 @@ function planDrop(paths, rawIds) {
       problems.push(guess ? `${id}: ids must be exact -- did you mean ${guess}?` : `${id}: ${malformedIdMessage(id)}`);
       continue;
     }
-    const liveBlocks2 = live.filter((b) => b.id === id);
+    const liveBlocks = live.filter((b) => b.id === id);
     const archiveBlocks = archived.filter((b) => b.id === id);
-    if (liveBlocks2.length === 0) {
+    if (liveBlocks.length === 0) {
       const hint = archiveBlocks.length > 0 ? "it is archived -- drop only removes live tasks" : "no such task on the live board";
       const guess = knownIds.has(id) ? null : resolveIdPrefixSafe(id, knownIds);
       problems.push(`${id}: ${hint}${guess ? ` (did you mean ${guess}?)` : ""}`);
       continue;
     }
-    const status = effective.get(id) ?? liveBlocks2[0].status;
+    const status = effective.get(id) ?? liveBlocks[0].status;
     if (status === "done") {
       problems.push(`${id}: is [done] -- archive it to keep the record`);
       continue;
@@ -1797,9 +1617,9 @@ function planDrop(paths, rawIds) {
     const briefPath = join4(paths.tasksDir, `${id}.md`);
     removals.push({
       id,
-      title: liveBlocks2[0].title,
-      manifestBlocks: liveBlocks2.length,
-      briefs: existsSync4(briefPath) ? [briefPath] : []
+      title: liveBlocks[0].title,
+      manifestBlocks: liveBlocks.length,
+      briefs: existsSync3(briefPath) ? [briefPath] : []
     });
   }
   const removing = new Set(removals.map((r) => r.id));
@@ -1842,7 +1662,7 @@ function applyDrop(paths, removals, reason) {
   const ids = new Set(removals.map((r) => r.id));
   if (ids.size === 0) return;
   if (removals.some((r) => r.manifestBlocks > 0)) {
-    const { out: out2 } = cutBlocks(readFileSync3(paths.manifest, "utf8"), ids);
+    const { out: out2 } = cutBlocks(readFileSync2(paths.manifest, "utf8"), ids);
     writeFileAtomic(paths.manifest, out2, "drop");
   }
   for (const r of removals) {
@@ -1865,11 +1685,11 @@ function describeDrop(r) {
 }
 
 // src/tasks/boardForget.ts
-import { existsSync as existsSync5, readFileSync as readFileSync4, readdirSync as readdirSync2, rmSync as rmSync2, unlinkSync as unlinkSync2 } from "node:fs";
+import { existsSync as existsSync4, readFileSync as readFileSync3, readdirSync, rmSync as rmSync2, unlinkSync as unlinkSync2 } from "node:fs";
 import { join as join5 } from "node:path";
 var DAY_FILE_RE = /^\d{4}-\d{2}-\d{2}\.jsonl$/;
 function readIfExists(path) {
-  return existsSync5(path) ? readFileSync4(path, "utf8") : "";
+  return existsSync4(path) ? readFileSync3(path, "utf8") : "";
 }
 function jsonlLines(path) {
   return readIfExists(path).split("\n").filter((l) => l.trim()).map((raw) => {
@@ -1881,8 +1701,8 @@ function jsonlLines(path) {
   });
 }
 function journalFiles(journalDir) {
-  if (!existsSync5(journalDir)) return [];
-  return readdirSync2(journalDir).filter((f) => DAY_FILE_RE.test(f)).sort().map((f) => join5(journalDir, f));
+  if (!existsSync4(journalDir)) return [];
+  return readdirSync(journalDir).filter((f) => DAY_FILE_RE.test(f)).sort().map((f) => join5(journalDir, f));
 }
 function resolveIdPrefixSafe2(candidate, ids) {
   try {
@@ -1892,7 +1712,7 @@ function resolveIdPrefixSafe2(candidate, ids) {
   }
 }
 function planForget(paths, rawIds) {
-  const live = parseManifestBlocks(readFileSync4(paths.manifest, "utf8")).blocks;
+  const live = parseManifestBlocks(readFileSync3(paths.manifest, "utf8")).blocks;
   const archived = parseManifestBlocks(readIfExists(paths.archive)).blocks;
   const knownIds = new Set([...live, ...archived].map((b) => b.id));
   const days = journalFiles(paths.journalDir).map((f) => ({ f, lines: jsonlLines(f) }));
@@ -1905,10 +1725,10 @@ function planForget(paths, rawIds) {
       problems.push(guess ? `${id}: ids must be exact -- did you mean ${guess}?` : `${id}: ${malformedIdMessage(id)}`);
       continue;
     }
-    const liveBlocks2 = live.filter((b) => b.id === id);
+    const liveBlocks = live.filter((b) => b.id === id);
     const archiveBlocks = archived.filter((b) => b.id === id);
     const briefs = [join5(paths.tasksDir, `${id}.md`), join5(paths.tasksDir, "archive", `${id}.md`)].filter(
-      (p) => existsSync5(p)
+      (p) => existsSync4(p)
     );
     const journal = /* @__PURE__ */ new Map();
     for (const { f, lines } of days) {
@@ -1916,8 +1736,8 @@ function planForget(paths, rawIds) {
       if (n > 0) journal.set(f, n);
     }
     const ledgerHits = ledger.filter((l) => l.a === id || l.b === id).length;
-    const title = (liveBlocks2[0] ?? archiveBlocks[0])?.title ?? "";
-    const traces = liveBlocks2.length + archiveBlocks.length + briefs.length + journal.size + ledgerHits;
+    const title = (liveBlocks[0] ?? archiveBlocks[0])?.title ?? "";
+    const traces = liveBlocks.length + archiveBlocks.length + briefs.length + journal.size + ledgerHits;
     if (traces === 0) {
       const guess = resolveIdPrefixSafe2(id, knownIds);
       problems.push(`${id}: no trace of this id on the board${guess ? ` (did you mean ${guess}?)` : ""}`);
@@ -1926,7 +1746,7 @@ function planForget(paths, rawIds) {
     removals.push({
       id,
       title,
-      manifestBlocks: liveBlocks2.length,
+      manifestBlocks: liveBlocks.length,
       archiveBlocks: archiveBlocks.length,
       briefs,
       journal,
@@ -1970,11 +1790,11 @@ function applyForget(paths, removals) {
     rewriteJsonl(paths.ledger, (l) => !(l.a && ids.has(l.a) || l.b && ids.has(l.b)));
   }
   if (removals.some((r) => r.archiveBlocks > 0)) {
-    const { out: out2 } = cutBlocks(readFileSync4(paths.archive, "utf8"), ids);
+    const { out: out2 } = cutBlocks(readFileSync3(paths.archive, "utf8"), ids);
     writeFileAtomic(paths.archive, out2, "forget");
   }
   if (removals.some((r) => r.manifestBlocks > 0)) {
-    const { out: out2 } = cutBlocks(readFileSync4(paths.manifest, "utf8"), ids);
+    const { out: out2 } = cutBlocks(readFileSync3(paths.manifest, "utf8"), ids);
     writeFileAtomic(paths.manifest, out2, "forget");
   }
   for (const r of removals) {
@@ -1993,422 +1813,26 @@ function describeForget(r) {
   return `${r.id}${title}: ${parts.join(", ")}`;
 }
 
-// src/tasks/boardStatusView.ts
-import { existsSync as existsSync6, readFileSync as readFileSync5 } from "node:fs";
-import { basename as basename3 } from "node:path";
-
-// src/tasks/runnable.ts
-import { dirname as dirname2, join as join6 } from "node:path";
-import { statSync as statSync2 } from "node:fs";
-var archiveCache = /* @__PURE__ */ new Map();
-function archiveIdsFor(manifestPath) {
-  const archivePath = join6(dirname2(manifestPath), "TASKS_ARCHIVE.md");
-  let st;
+// src/tasks/boardBannerRun.ts
+import { resolve as resolve2 } from "node:path";
+function runBanner(args2, extra) {
+  const cwdIdx = args2.indexOf("--cwd");
+  const cwd = cwdIdx >= 0 && args2[cwdIdx + 1] ? resolve2(args2[cwdIdx + 1]) : process.cwd();
+  let result = { banner: "", inputs: [] };
   try {
-    const raw = statSync2(archivePath);
-    st = { mtimeMs: raw.mtimeMs, size: raw.size };
-  } catch {
-    return /* @__PURE__ */ new Set();
+    result = boardBannerView(resolveBoard(cwd), cwd);
+  } catch (error) {
+    console.error("/cyberine-taskboard:tasks banner: board unreadable, staying silent:", error.message);
   }
-  const cached = archiveCache.get(archivePath);
-  if (cached && cached.mtimeMs === st.mtimeMs && cached.size === st.size) return cached.ids;
-  const ids = archivedIds(archivePath);
-  archiveCache.set(archivePath, { ...st, ids });
-  return ids;
-}
-function depSatisfied(depId, doneIds, dupMap) {
-  if (doneIds.has(depId)) return true;
-  const { target, cycle } = resolveDuplicateOf(dupMap, depId);
-  return !cycle && doneIds.has(target);
-}
-function depHops(t, doneIds, dupMap) {
-  const hops = {};
-  for (const d of t.deps) {
-    if (doneIds.has(d) || !dupMap.has(d)) continue;
-    const { target, cycle } = resolveDuplicateOf(dupMap, d);
-    if (!cycle && doneIds.has(target)) hops[d] = target;
+  if (extra !== void 0) {
+    const more = extra(cwd);
+    const sep = result.banner === "" || result.banner.endsWith("\n") ? "" : "\n";
+    const banner = more.lines.length > 0 ? `${result.banner}${sep}${more.lines.join("\n")}
+` : result.banner;
+    result = { banner, inputs: [...result.inputs, ...more.inputs] };
   }
-  return hops;
-}
-function formatDepsList(t, doneIds, dupMap) {
-  const hops = depHops(t, doneIds, dupMap);
-  return t.deps.map((d) => hops[d] ? `${d}->${hops[d]} done` : d).join(",");
-}
-function isRunnableTask(t, doneIds, dupMap) {
-  if (t.status !== "todo") return false;
-  if (t.blocker) return false;
-  if (t.duplicateOf) return false;
-  return t.deps.every((d) => depSatisfied(d, doneIds, dupMap));
-}
-function computeRunnable(tasks, opts = {}) {
-  const doneIds = /* @__PURE__ */ new Set();
-  for (const t of tasks) {
-    if (t.status === "done") doneIds.add(t.id);
-  }
-  const archive = opts.archiveIds === null ? null : opts.archiveIds ?? (tasks[0]?.manifestPath ? archiveIdsFor(tasks[0].manifestPath) : null);
-  if (archive) for (const id of archive) doneIds.add(id);
-  const byId = /* @__PURE__ */ new Map();
-  for (const t of tasks) byId.set(t.id, t.status);
-  const dupMap = /* @__PURE__ */ new Map();
-  for (const t of tasks) {
-    if (t.duplicateOf) dupMap.set(t.id, t.duplicateOf);
-  }
-  const byStatus = new Map(TASK_STATUSES.map((s) => [s, []]));
-  const runnable = [];
-  const waiting = [];
-  const blocked = [];
-  const stillTodo = [];
-  const duplicate = [];
-  for (const t of tasks) {
-    if (t.duplicateOf) {
-      duplicate.push(t);
-      continue;
-    }
-    byStatus.get(t.status)?.push(t);
-    if (t.status !== "todo") continue;
-    if (t.blocker) {
-      waiting.push(t);
-    } else if (isRunnableTask(t, doneIds, dupMap)) {
-      runnable.push(t);
-    } else if (t.deps.every((d) => depSatisfied(d, doneIds, dupMap))) {
-      stillTodo.push(t);
-    } else {
-      blocked.push(t);
-    }
-  }
-  const rank = { p0: 0, p1: 1, p2: 2 };
-  runnable.sort((a, b) => rank[a.priority ?? "p1"] - rank[b.priority ?? "p1"]);
-  return {
-    runnable,
-    waiting,
-    blocked,
-    stillTodo,
-    doing: byStatus.get("doing"),
-    backlog: byStatus.get("backlog"),
-    done: byStatus.get("done"),
-    forbidden: byStatus.get("forbidden"),
-    duplicate,
-    doneIds,
-    byId,
-    byStatus,
-    dupMap
-  };
-}
-function scopeRunnableSets(tasks, sets, cwd, showAll) {
-  const scope = showAll ? "" : submoduleScope(cwd);
-  if (!scope) return { sets, scope: "", hidden: 0 };
-  const keep = (list) => list.filter((t) => pathInScope(t.path, scope));
-  const byStatus = /* @__PURE__ */ new Map();
-  for (const [status, list] of sets.byStatus) byStatus.set(status, keep(list));
-  return {
-    sets: {
-      ...sets,
-      runnable: keep(sets.runnable),
-      waiting: keep(sets.waiting),
-      blocked: keep(sets.blocked),
-      stillTodo: keep(sets.stillTodo),
-      doing: byStatus.get("doing") ?? [],
-      backlog: byStatus.get("backlog") ?? [],
-      done: byStatus.get("done") ?? [],
-      forbidden: byStatus.get("forbidden") ?? [],
-      duplicate: keep(sets.duplicate),
-      byStatus
-    },
-    scope,
-    hidden: tasks.filter((t) => !pathInScope(t.path, scope)).length
-  };
-}
-function submoduleScopeNotice(scoped) {
-  if (!scoped.scope || scoped.hidden === 0) return null;
-  return `taskboard: scoped to submodule ${scoped.scope}/ -- ${scoped.hidden} task(s) elsewhere on this board hidden (--all shows every task)`;
-}
-function missingDeps(t, sets) {
-  return t.deps.filter((d) => !depSatisfied(d, sets.doneIds, sets.dupMap));
-}
-function stuckReason(sets) {
-  const parts = [];
-  if (sets.waiting.length > 0) {
-    parts.push(`${sets.waiting.length} blocked by an external blocker (release one with '/cyberine-taskboard:tasks status unblock <id>')`);
-  }
-  if (sets.blocked.length > 0) parts.push(`${sets.blocked.length} waiting on deps (finish them or mark them done)`);
-  return `${parts.join("; ")}.`;
-}
-function formatRunnableSummary(sets, opts) {
-  const take = opts?.take;
-  const claimed = take === void 0 ? sets.runnable : sets.runnable.slice(0, take);
-  const leftForOthers = take === void 0 ? [] : sets.runnable.slice(take);
-  const header = `${sets.doneIds.size} done | ${claimed.length} runnable${take !== void 0 ? ` (take=${take})` : ""} | ${leftForOthers.length} left-for-others | ${sets.waiting.length} blocked | ${sets.blocked.length} waiting | ${sets.doing.length} in-progress | ${sets.backlog.length} backlog | ${sets.forbidden.length} forbidden`;
-  const lines = [header, ""];
-  if (claimed.length === 0) {
-    let reason;
-    if (leftForOthers.length > 0) reason = `${leftForOthers.length} runnable but take=0.`;
-    else if (sets.blocked.length > 0 || sets.waiting.length > 0) reason = stuckReason(sets);
-    else if (sets.done.length > 0 || sets.doing.length > 0)
-      reason = "all runnable tasks already in-progress or done.";
-    else reason = "no todo tasks in manifest.";
-    lines.push(`(nothing runnable \u2014 ${reason})`);
-    return lines.join("\n");
-  }
-  lines.push("Runnable (next to dispatch):");
-  for (const t of claimed) {
-    let entry = `  ${t.id}  ${t.title}`;
-    if (t.deps.length > 0) entry += `  [deps: ${formatDepsList(t, sets.doneIds, sets.dupMap)}]`;
-    if (t.blocker) entry += `  [blocker: ${t.blocker}]`;
-    lines.push(entry);
-  }
-  if (leftForOthers.length > 0) {
-    lines.push("");
-    lines.push(`Left for other sessions: ${leftForOthers.map((t) => t.id).join(", ")}`);
-  }
-  if (sets.waiting.length > 0) {
-    lines.push("");
-    lines.push("Blocked by an external blocker (release with `/cyberine-taskboard:tasks status unblock <id>`):");
-    for (const t of sets.waiting) {
-      lines.push(`  ${t.id}  ${t.title}  -- blocker: ${t.blocker || "(unspecified)"}`);
-    }
-  }
-  if (sets.blocked.length > 0) {
-    lines.push("");
-    lines.push("Waiting on deps (not done yet):");
-    for (const t of sets.blocked) {
-      const missing = missingDeps(t, sets).map(
-        (d) => resolveDuplicateOf(sets.dupMap, d).cycle ? `${d} (duplicate-of cycle, fix the board)` : d
-      );
-      lines.push(`  ${t.id}  ${t.title}  -- waiting on: ${missing.join(", ") || "(unknown dep)"}`);
-    }
-  }
-  return lines.join("\n");
-}
-
-// src/tasks/boardStatusView.ts
-function recurringEntries(src) {
-  const blocks = parseManifestBlocks(src, /^R[0-9]+$/).blocks.filter((b) => b.status === "recurring");
-  const today = /* @__PURE__ */ new Date();
-  const todayEpoch = new Date(today.getFullYear(), today.getMonth(), today.getDate()).getTime();
-  return blocks.map((b) => {
-    const every = b.fields.get("every") ?? "";
-    const last = b.fields.get("last-done") ?? "";
-    const exec = (b.fields.get("exec") ?? "").trim();
-    const count = Number(/^\d+/.exec(every)?.[0] ?? 0);
-    const unit = /[dwm]/.exec(every)?.[0] ?? "d";
-    const need = count * (unit === "w" ? 7 : unit === "m" ? 30 : 1);
-    if (!last) return { id: b.id, state: "NEW", days: 0, every, lastDone: "", title: b.title, exec };
-    const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(last);
-    const lastEpoch = match ? new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3])).getTime() : 0;
-    const elapsed = Math.floor((todayEpoch - lastEpoch) / 864e5);
-    const due = elapsed >= need;
-    return {
-      id: b.id,
-      state: due ? "DUE" : "OK",
-      days: due ? elapsed - need : need - elapsed,
-      every,
-      lastDone: last,
-      title: b.title,
-      exec
-    };
-  });
-}
-function createdEpoch(dateStr) {
-  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dateStr);
-  if (!m) return null;
-  return Math.floor(new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3])).getTime() / 1e3);
-}
-function healthLines(view) {
-  const nowSec = Date.now() / 1e3;
-  const ages = view.tasks.filter((t) => (t.status === "todo" || t.status === "backlog") && t.created !== "").flatMap((t) => {
-    const epoch = createdEpoch(t.created);
-    return epoch === null ? [] : [{ id: t.id, title: t.title, label: t.eff === "blocked" ? "blocked" : t.status, created: t.created, ageDays: Math.floor((nowSec - epoch) / 86400) }];
-  }).sort((a, b) => b.ageDays - a.ageDays);
-  const overdue = view.recurring.filter((e) => e.state !== "OK");
-  const dispatchable = overdue.filter((e) => e.exec !== "");
-  const manual = overdue.filter((e) => e.exec === "");
-  const worstManual = manual.slice().sort((a, b) => a.state === "NEW" ? -1 : b.state === "NEW" ? 1 : b.days - a.days)[0];
-  const health = [];
-  if (view.ready.length) {
-    health.push(`  backlog-rot: ${view.ready.length} task(s) ready to promote (deps satisfied):`);
-    for (const t of view.ready) health.push(`    ${t.id} [backlog] ${t.title}  ->  /cyberine-taskboard:tasks status todo ${t.id}`);
-  }
-  if (ages.length) {
-    health.push(`  age: ${ages.length} task(s) carry a created: field:`);
-    for (const a of ages) health.push(`    ${a.id} [${a.label}] ${a.title}  -- created ${a.created} (${a.ageDays}d old)`);
-  }
-  if (view.stale.length) {
-    health.push(`  stale-doing: ${view.stale.length} task(s) [doing] past the ${view.threshold}d threshold -- see the [doing] section above`);
-  }
-  if (overdue.length) {
-    health.push(`  recurring: ${overdue.length} overdue (${dispatchable.length} with an exec: field, ${manual.length} manual)`);
-    if (worstManual) health.push(`    worst manual: ${worstManual.id} (${worstManual.state === "NEW" ? "never run" : `${worstManual.days}d overdue`})`);
-  }
-  return health;
-}
-function formatRecurringLine(e) {
-  if (e.state === "NEW") return `${e.id}  ** DUE ** never run (every ${e.every})  ${e.title}`;
-  if (e.state === "DUE") return `${e.id}  ** DUE ** ${e.days}d overdue (every ${e.every})  ${e.title}`;
-  return `${e.id}  in ${e.days}d (every ${e.every}, last ${e.lastDone})  ${e.title}`;
-}
-function boardView(paths, cwd, showAll) {
-  const src = readFileSync5(paths.manifest, "utf8");
-  const effective = new Map(fold(paths.manifest, paths).map((t) => [t.id, t.status]));
-  const overlay = readOverlayText(paths);
-  const owners = /* @__PURE__ */ new Map();
-  const epochs = /* @__PURE__ */ new Map();
-  for (const line of overlay.split("\n")) {
-    const fields = line.split("	");
-    if (fields.length < 4) continue;
-    owners.set(fields[2], fields[1]);
-    const epoch = Number(fields[0]);
-    if (Number.isFinite(epoch)) epochs.set(fields[2], epoch);
-  }
-  const base = parseManifestBlocks(src, TASK_ID_RE).blocks.filter((b) => b.status !== "recurring").map((b) => ({
-    id: b.id,
-    status: effective.get(b.id) ?? b.status ?? "",
-    title: b.title,
-    blocker: b.fields.get("blocker")?.trim() ?? "",
-    reason: b.fields.get("reason")?.trim() ?? "",
-    deps: (b.fields.get("deps") ?? "").split(/[,\s]+/).filter((id) => TASK_ID_RE.test(id)),
-    duplicateOf: b.fields.get("duplicate-of")?.trim() ?? "",
-    path: b.fields.get("path")?.trim() ?? "",
-    baseStatus: b.status ?? "",
-    created: b.fields.get("created")?.trim() ?? ""
-  }));
-  const doneIds = archiveIdsFor(paths.manifest);
-  for (const t of base) if (t.status === "done") doneIds.add(t.id);
-  const duplicates2 = new Map(base.filter((t) => t.duplicateOf && t.duplicateOf !== "-").map((t) => [t.id, t.duplicateOf]));
-  const all = base.map((t) => {
-    const missing = t.deps.filter((id) => !depSatisfied(id, doneIds, duplicates2));
-    const blocked2 = t.blocker !== "" && t.blocker !== "-";
-    let eff;
-    if (!TASK_STATUS_SET.has(t.status)) eff = "unknown";
-    else if (t.status === "todo" && blocked2) eff = "blocked";
-    else if (t.status === "todo" && missing.length) eff = "waiting";
-    else eff = t.status;
-    return {
-      id: t.id,
-      status: t.status,
-      baseStatus: t.baseStatus,
-      eff,
-      title: t.title,
-      blocker: t.blocker,
-      reason: t.reason,
-      deps: t.deps,
-      missing,
-      duplicateOf: t.duplicateOf,
-      path: t.path,
-      owner: owners.get(t.id) ?? "",
-      epoch: epochs.get(t.id),
-      created: t.created
-    };
-  });
-  const scope = showAll ? "" : submoduleScope(cwd);
-  const tasks = scope ? all.filter((t) => pathInScope(t.path, scope)) : all;
-  const hidden = all.length - tasks.length;
-  const doing = tasks.filter((t) => t.status === "doing");
-  const todo = tasks.filter((t) => t.status === "todo" && (t.blocker === "" || t.blocker === "-"));
-  const blocked = tasks.filter((t) => t.status === "todo" && t.blocker !== "" && t.blocker !== "-");
-  const backlog = tasks.filter((t) => t.status === "backlog");
-  const done = tasks.filter((t) => t.status === "done");
-  const forbidden = tasks.filter((t) => t.status === "forbidden");
-  const unknown = tasks.filter((t) => !TASK_STATUS_SET.has(t.status));
-  const ready = backlog.filter(
-    (t) => (t.blocker === "" || t.blocker === "-") && (t.duplicateOf === "" || t.duplicateOf === "-") && t.missing.length === 0
-  );
-  const waitingDeps = todo.filter((t) => t.missing.length > 0);
-  const recurring = recurringEntries(src);
-  const recurringDue = recurring.filter((e) => e.state !== "OK").length;
-  const pending = logLines(paths);
-  const rawThreshold = Number(boardEnv("CYBERINE_TASKS_STALE_DOING_DAYS"));
-  const threshold = Number.isFinite(rawThreshold) && rawThreshold > 0 ? rawThreshold : 3;
-  const stale = doing.filter((t) => t.epoch !== void 0 && (Date.now() / 1e3 - t.epoch) / 86400 >= threshold);
-  return {
-    src,
-    tasks,
-    all,
-    hidden,
-    scope,
-    doing,
-    todo,
-    blocked,
-    backlog,
-    done,
-    forbidden,
-    unknown,
-    ready,
-    waitingDeps,
-    recurring,
-    recurringDue,
-    pending,
-    threshold,
-    stale
-  };
-}
-function boardStatusView(paths, cwd, summary, showAll) {
-  const view = boardView(paths, cwd, showAll);
-  const { doing, todo, blocked, backlog, done, forbidden, unknown, ready, waitingDeps } = view;
-  const stderr = [];
-  if (view.scope && view.hidden > 0) {
-    stderr.push(`/cyberine-taskboard:tasks: scoped to submodule ${view.scope}/ -- ${view.hidden} task(s) elsewhere on this board hidden (--all shows every task)`);
-  }
-  for (const t of view.stale) {
-    const age = (Date.now() / 1e3 - t.epoch) / 86400;
-    stderr.push(`/cyberine-taskboard:tasks: ${t.id} has been [doing] for ${age.toFixed(1)}d (stale threshold ${view.threshold}d) -- confirm it is still active`);
-  }
-  if (summary) {
-    let line = `[taskboard] ${basename3(paths.root)} \xB7 ${doing.length} doing \xB7 ${todo.length} todo \xB7 ${backlog.length} backlog${ready.length ? ` (${ready.length} ready)` : ""}`;
-    if (blocked.length) line += ` \xB7 ${blocked.length} blocked`;
-    if (view.stale.length) line += ` \xB7 ${view.stale.length} stale-doing`;
-    if (forbidden.length) line += ` \xB7 ${forbidden.length} FORBIDDEN`;
-    if (unknown.length) line += ` \xB7 ${unknown.length} UNKNOWN-STATUS`;
-    if (view.recurringDue) line += ` \xB7 ${view.recurringDue} recurring DUE`;
-    if (view.pending) line += ` \xB7 ${view.pending} status flip${view.pending === 1 ? "" : "s"} not yet in the headers`;
-    return { stdout: `${line} \u2192 ${paths.manifest}
-`, stderr };
-  }
-  const lines = [paths.manifest];
-  let head = `${doing.length} doing \xB7 ${todo.length} todo \xB7 ${backlog.length} backlog \xB7 ${done.length} done`;
-  if (blocked.length) head += ` \xB7 ${blocked.length} blocked`;
-  if (waitingDeps.length) head += ` \xB7 ${waitingDeps.length} waiting on deps`;
-  if (ready.length) head += ` \xB7 ${ready.length} backlog ready`;
-  if (view.recurring.length) head += ` \xB7 ${view.recurring.length} recurring (${view.recurringDue} due)`;
-  if (forbidden.length) head += ` \xB7 ${forbidden.length} FORBIDDEN`;
-  if (unknown.length) head += ` \xB7 ${unknown.length} UNKNOWN-STATUS`;
-  if (view.pending) head += ` \xB7 ${view.pending} status flip${view.pending === 1 ? "" : "s"} not yet in the headers`;
-  lines.push(head, "---");
-  const section = (title, entries) => {
-    if (!entries.length) return;
-    lines.push(`[${title}]`, ...entries, "");
-  };
-  section("doing", doing.map((t) => `${t.id} [doing] ${t.title}${t.owner ? `  (\xAB${t.owner}\xBB)` : ""}`));
-  section("todo", todo.map((t) => `${t.id} [todo] ${t.title}`));
-  section("waiting on deps", waitingDeps.map((t) => `${t.id} [todo] ${t.title} -- waiting on: ${t.missing.join(", ")}`));
-  section("blocked", blocked.map((t) => `${t.id} [blocked] ${t.title} -- ${t.blocker}`));
-  section("backlog", backlog.map((t) => `${t.id} [backlog] ${t.title}${ready.includes(t) ? "  (ready)" : ""}`));
-  section("done", done.map((t) => `${t.id} [done] ${t.title}`));
-  section("FORBIDDEN \u2014 never run, permanent tombstone", forbidden.map((t) => `${t.id} [forbidden] ${t.title}${t.reason ? `
-   reason: ${t.reason}` : ""}`));
-  section("UNKNOWN STATUS \u2014 fix the bracket", unknown.map((t) => `${t.id} [${t.status}] ${t.title}`));
-  section("recurring", view.recurring.map(formatRecurringLine));
-  const health = healthLines(view);
-  if (health.length) lines.push("[board health]", ...health, "");
-  return { stdout: `${lines.join("\n").replace(/\n+$/, "")}
-`, stderr };
-}
-function boardBannerView(paths, cwd) {
-  const inputs = [...manifestCandidates(paths.root), paths.log, paths.statusDir, paths.archive];
-  if (!existsSync6(paths.manifest)) return { banner: "", inputs };
-  const view = boardView(paths, cwd, false);
-  if (view.all.length === 0 && view.recurring.length === 0) return { banner: "", inputs };
-  const lines = [boardStatusView(paths, cwd, true, false).stdout.trimEnd()];
-  const next = view.doing[0] ?? view.todo[0];
-  if (next) {
-    const epoch = next.created ? createdEpoch(next.created) : null;
-    const age = epoch === null ? "" : `  (created ${next.created}, ${Math.floor((Date.now() / 1e3 - epoch) / 86400)}d ago)`;
-    lines.push(`Resume: ${next.id}: ${next.title}${age}  (/cyberine-taskboard:tasks for the full view)`);
-  }
-  if (view.recurringDue) {
-    lines.push(`${view.recurringDue} recurring task(s) due -- /cyberine-taskboard:tasks recurring list to see; /cyberine-taskboard:tasks status did <Rxx> after running.`);
-  }
-  return { banner: `${lines.join("\n")}
-`, inputs };
+  process.stdout.write(args2.includes("--json") ? `${JSON.stringify(result)}
+` : result.banner);
 }
 
 // src/tasks/boardGroups.ts
@@ -2503,6 +1927,8 @@ function boardStatusJson(view, manifest) {
     manifest,
     scope: view.scope,
     hidden: view.hidden,
+    unassigned: view.unassigned.map((t) => t.id),
+    unreviewedDecisions: view.unreviewedDecisions,
     counts: {
       doing: byEff("doing"),
       todo: byEff("todo"),
@@ -2516,7 +1942,9 @@ function boardStatusJson(view, manifest) {
       stale: stale.size,
       recurring: view.recurring.length,
       recurringDue: view.recurringDue,
-      pending: view.pending
+      pending: view.pending,
+      ownerActionable: view.ownerActionable.length,
+      ownerWaiting: view.ownerWaiting.length
     },
     tasks: view.tasks.map((t) => ({
       id: t.id,
@@ -2533,7 +1961,8 @@ function boardStatusJson(view, manifest) {
       owner: t.owner,
       created: t.created,
       ready: ready.has(t.id),
-      stale: stale.has(t.id)
+      stale: stale.has(t.id),
+      exec: t.exec
     })),
     recurring: view.recurring.map((e) => ({
       id: e.id,
@@ -2554,6 +1983,7 @@ function boardNextJson(scoped, manifest, opts = {}) {
     manifest,
     scope: scoped.scope,
     hidden: scoped.hidden,
+    unassigned: scoped.unassigned,
     counts: {
       done: sets.doneIds.size,
       runnable: sets.runnable.length,
@@ -2595,14 +2025,14 @@ function writeJsonLine(value) {
 }
 
 // src/tasks/boardHtml.ts
-import { existsSync as existsSync7, readFileSync as readFileSync6 } from "node:fs";
-import { basename as basename4, join as join7, relative } from "node:path";
+import { existsSync as existsSync5, readFileSync as readFileSync4 } from "node:fs";
+import { basename as basename3, join as join6, relative } from "node:path";
 
 // scripts/taskboard-bundle/packageRootStub.ts
-import { dirname as dirname3, resolve } from "node:path";
+import { dirname as dirname3, resolve as resolve3 } from "node:path";
 import { fileURLToPath } from "node:url";
 function packageRoot() {
-  return resolve(dirname3(fileURLToPath(import.meta.url)), "..");
+  return resolve3(dirname3(fileURLToPath(import.meta.url)), "..");
 }
 
 // src/tasks/boardHtml.ts
@@ -2617,8 +2047,8 @@ function daysBetween(from, to) {
   return Math.max(0, Math.round((b - a) / 864e5));
 }
 function readAttempts(briefPath) {
-  if (!existsSync7(briefPath)) return [];
-  const lines = readFileSync6(briefPath, "utf8").split("\n");
+  if (!existsSync5(briefPath)) return [];
+  const lines = readFileSync4(briefPath, "utf8").split("\n");
   const out2 = [];
   let inAttempts = false;
   for (const line of lines) {
@@ -2632,8 +2062,8 @@ function readAttempts(briefPath) {
   return out2;
 }
 function archiveEntries(paths, recent) {
-  if (!existsSync7(paths.archive) || recent <= 0) return [];
-  const blocks = parseManifestBlocks(readFileSync6(paths.archive, "utf8"), TASK_ID_RE).blocks;
+  if (!existsSync5(paths.archive) || recent <= 0) return [];
+  const blocks = parseManifestBlocks(readFileSync4(paths.archive, "utf8"), TASK_ID_RE).blocks;
   return blocks.slice(-recent).reverse().map((b) => ({
     id: b.id,
     title: b.title,
@@ -2650,7 +2080,7 @@ function journalDays(paths, limit) {
   });
 }
 function buildBoardData(paths, opts = {}) {
-  const src = readFileSync6(paths.manifest, "utf8");
+  const src = readFileSync4(paths.manifest, "utf8");
   const view = boardView(paths, paths.root, true);
   const byId = new Map(view.all.map((t) => [t.id, t]));
   const blocks = parseManifestBlocks(src, TASK_ID_RE).blocks.filter((b) => b.status !== "recurring");
@@ -2661,8 +2091,8 @@ function buildBoardData(paths, opts = {}) {
     const depsRaw = f("deps");
     const deps = depsRaw && depsRaw !== "-" ? depsRaw.split(/[,\s]+/).filter(Boolean) : [];
     const created = f("created");
-    const briefPath = join7(paths.tasksDir, `${b.id}.md`);
-    const hasBrief = existsSync7(briefPath);
+    const briefPath = join6(paths.tasksDir, `${b.id}.md`);
+    const hasBrief = existsSync5(briefPath);
     return {
       id: b.id,
       pos,
@@ -2693,7 +2123,7 @@ function buildBoardData(paths, opts = {}) {
   });
   return {
     meta: {
-      repo: basename4(paths.root),
+      repo: basename3(paths.root),
       manifest: paths.manifest.startsWith(paths.root) ? relative(paths.root, paths.manifest) : paths.manifest,
       generated: today,
       root: paths.root
@@ -2705,14 +2135,14 @@ function buildBoardData(paths, opts = {}) {
   };
 }
 function boardTemplatePath() {
-  return join7(packageRoot(), "templates", TEMPLATE_NAME);
+  return join6(packageRoot(), "templates", TEMPLATE_NAME);
 }
 function renderBoardHtml(data) {
   const templatePath = boardTemplatePath();
-  if (!existsSync7(templatePath)) {
+  if (!existsSync5(templatePath)) {
     throw new Error(`/cyberine-taskboard:tasks board: template missing at ${templatePath}`);
   }
-  const template = readFileSync6(templatePath, "utf8");
+  const template = readFileSync4(templatePath, "utf8");
   if (!template.includes("__DATA__") || !template.includes("<title>__TITLE__</title>")) {
     throw new Error(`/cyberine-taskboard:tasks board: template ${templatePath} is missing its __TITLE__ or __DATA__ slot`);
   }
@@ -2722,11 +2152,11 @@ function renderBoardHtml(data) {
 }
 
 // src/tasks/boardStatusExtras.ts
-import { existsSync as existsSync8, mkdirSync as mkdirSync2, readFileSync as readFileSync7 } from "node:fs";
+import { existsSync as existsSync6, mkdirSync as mkdirSync2, readFileSync as readFileSync5 } from "node:fs";
 import { dirname as dirname4, relative as relative2 } from "node:path";
 function duplicateTarget(manifest, id) {
   const map = /* @__PURE__ */ new Map();
-  for (const block of parseManifestBlocks(readFileSync7(manifest, "utf8")).blocks) {
+  for (const block of parseManifestBlocks(readFileSync5(manifest, "utf8")).blocks) {
     const target2 = block.fields.get("duplicate-of")?.trim();
     if (target2 && target2 !== "-") map.set(block.id, target2);
   }
@@ -2742,7 +2172,7 @@ function duplicateTarget(manifest, id) {
 }
 function appendAttempt(briefPath, reason) {
   const entry = `- ${todayLocalDate()}: ${reason}`;
-  const src = existsSync8(briefPath) ? readFileSync7(briefPath, "utf8") : "";
+  const src = existsSync6(briefPath) ? readFileSync5(briefPath, "utf8") : "";
   const lines = src.endsWith("\n") ? src.slice(0, -1).split("\n") : src ? src.split("\n") : [];
   const start = lines.findIndex((line) => line.trim() === "## Attempts");
   if (start === -1) {
@@ -2761,7 +2191,7 @@ function stampPaths(manifest, root, cwd, ids) {
   if (cwd === root) return;
   const path = relative2(root, cwd);
   if (!path || path.startsWith("..")) return;
-  const src = readFileSync7(manifest, "utf8");
+  const src = readFileSync5(manifest, "utf8");
   let lines = src.endsWith("\n") ? src.slice(0, -1).split("\n") : src.split("\n");
   let changed = false;
   for (const id of ids) {
@@ -2780,7 +2210,7 @@ function stampPaths(manifest, root, cwd, ids) {
 }
 var REASON_LINE_RE = /^reason:(\s|$)/;
 function setForbiddenReason(manifest, id, reason) {
-  const src = readFileSync7(manifest, "utf8");
+  const src = readFileSync5(manifest, "utf8");
   const lines = src.endsWith("\n") ? src.slice(0, -1).split("\n") : src.split("\n");
   const block = parseManifestBlocks(lines.join("\n")).blocks.find((b) => b.id === id);
   if (!block) throw new Error(`no such task: ${id}`);
@@ -2794,466 +2224,18 @@ function setForbiddenReason(manifest, id, reason) {
 `, "tmp");
 }
 function forbiddenIdsMissingReason(manifest, ids) {
-  const blocks = parseManifestBlocks(readFileSync7(manifest, "utf8")).blocks;
+  const blocks = parseManifestBlocks(readFileSync5(manifest, "utf8")).blocks;
   return ids.filter((id) => !blocks.find((b) => b.id === id)?.fields.get("reason")?.trim());
 }
 
-// src/tasks/boardRecurring.ts
-import { existsSync as existsSync9, readFileSync as readFileSync8 } from "node:fs";
-function epochOf(value) {
-  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
-  if (!match) return 0;
-  return Math.floor(new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3])).getTime() / 1e3);
-}
-function everyDays(value) {
-  const n = Number(/^[0-9]+/.exec(value)?.[0] ?? 0);
-  const unit = /[dwm]/.exec(value)?.[0] ?? "d";
-  return n * (unit === "w" ? 7 : unit === "m" ? 30 : 1);
-}
-function recurringList(manifest) {
-  if (!existsSync9(manifest)) return "";
-  const blocks = parseManifestBlocks(readFileSync8(manifest, "utf8"), /^R[0-9]+$/).blocks;
-  const today = epochOf(todayLocalDate());
-  return blocks.filter((b) => b.status === "recurring").map((b) => {
-    const every = b.fields.get("every") ?? "";
-    const last = b.fields.get("last-done") ?? "";
-    if (!last) return `NEW|${b.id}|0|${every}||${b.title}`;
-    const elapsed = Math.floor((today - epochOf(last)) / 86400);
-    const need = everyDays(every);
-    return `${elapsed >= need ? "DUE" : "OK"}|${b.id}|${elapsed >= need ? elapsed - need : need - elapsed}|${every}|${last}|${b.title}`;
-  }).join("\n");
-}
-function recurringDueCount(manifest) {
-  return recurringList(manifest).split("\n").filter((line) => /^(DUE|NEW)\|/.test(line)).length;
-}
-function recurringDid(manifest, id) {
-  if (!existsSync9(manifest)) throw new Error("no manifest");
-  const src = readFileSync8(manifest, "utf8");
-  const lines = src.endsWith("\n") ? src.slice(0, -1).split("\n") : src.split("\n");
-  const block = parseManifestBlocks(lines.join("\n"), /^R[0-9]+$/).blocks.find((b) => b.id === id && b.status === "recurring");
-  if (!block) throw new Error(`no such recurring task: ${id}`);
-  const line = `last-done: ${todayLocalDate()}`;
-  if (block.fields.has("last-done")) {
-    for (let i = block.start + 1; i < block.end; i++) if (/^last-done:/.test(lines[i])) lines[i] = line;
-  } else {
-    let at = -1;
-    for (let i = block.start + 1; i < block.end; i++) if (/^every:/.test(lines[i])) at = i + 1;
-    if (at < 0) {
-      at = block.end;
-      while (at > block.start + 1 && lines[at - 1].trim() === "") at--;
-    }
-    lines.splice(at, 0, line);
-  }
-  writeFileAtomic(manifest, `${lines.join("\n")}
-`, "tmp");
-}
-var R_FIELD_ORDER = ["every", "last-done", "exec", "model", "reasoning", "do"];
-var EVERY_RE = /^[1-9][0-9]*[dwm]$/;
-var DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
-function isRealDate(v) {
-  if (!DATE_RE.test(v)) return false;
-  const parts = v.split("-").map(Number);
-  const y = parts[0];
-  const m = parts[1];
-  const d = parts[2];
-  const dt = new Date(y, m - 1, d);
-  return dt.getFullYear() === y && dt.getMonth() === m - 1 && dt.getDate() === d;
-}
-function validateRecurringFields(fields, merged) {
-  if (fields.title !== void 0 && !fields.title) throw new BoardRejected("recurring: --title must not be empty");
-  if (fields.do !== void 0 && !fields.do) throw new BoardRejected("recurring: --do must not be empty");
-  if (fields.every !== void 0 && !EVERY_RE.test(fields.every)) {
-    throw new BoardRejected(`recurring: --every must be <N>d, <N>w or <N>m with N >= 1 (got "${fields.every}")`);
-  }
-  if (fields.lastDone !== void 0 && fields.lastDone !== "-") {
-    if (!isRealDate(fields.lastDone)) {
-      throw new BoardRejected(`recurring: --last-done must be a real YYYY-MM-DD date or "-" (got "${fields.lastDone}")`);
-    }
-    if (fields.lastDone > todayLocalDate()) {
-      throw new BoardRejected(`recurring: --last-done ${fields.lastDone} is in the future`);
-    }
-  }
-  if (fields.exec !== void 0 && fields.exec !== "-" && !VALID_EXEC.has(fields.exec)) {
-    throw new BoardRejected(`recurring: --exec must be one of ${[...VALID_EXEC].join("|")} or "-"`);
-  }
-  if (fields.model !== void 0 && fields.model !== "-" && !VALID_MODELS.has(fields.model)) {
-    throw new BoardRejected(`recurring: --model must be one of ${[...VALID_MODELS].join("|")} or "-"`);
-  }
-  if (merged.model && !merged.exec) {
-    throw new BoardRejected("recurring: model: only means something with exec: -- pass --exec too, or --model -");
-  }
-  if (merged.exec === "manual" && merged.model) {
-    throw new BoardRejected("recurring: exec: manual dispatches no agent, so it takes no model: -- pass --model -");
-  }
-  if (fields.reasoning !== void 0 && fields.reasoning !== "-" && !VALID_REASONING.has(fields.reasoning)) {
-    throw new BoardRejected(`recurring: --reasoning must be one of ${[...VALID_REASONING].join("|")} or "-"`);
-  }
-  if (merged.reasoning && merged.exec !== "agent") {
-    throw new BoardRejected("recurring: reasoning: applies only to exec: agent -- pass --exec agent, or --reasoning -");
-  }
-}
-function readLines(manifest) {
-  const src = readFileSync8(manifest, "utf8");
-  return src.endsWith("\n") ? src.split("\n").slice(0, -1) : src.split("\n");
-}
-function writeGuarded(manifest, before, after, delta) {
-  if (countAllHeaders(after.join("\n")) !== countAllHeaders(before.join("\n")) + delta) {
-    throw new BoardRejected("recurring: internal: the rewrite would change the block count unexpectedly -- manifest left untouched");
-  }
-  writeFileAtomic(manifest, `${after.join("\n")}
-`, "tmp");
-}
-function findR(lines, id) {
-  return parseManifestBlocks(lines.join("\n"), RECURRING_ID_RE).blocks.find((b) => b.id === id && b.status === "recurring");
-}
-function fieldSlot(lines, start, end, field) {
-  const mine = R_FIELD_ORDER.indexOf(field);
-  let at = start + 1;
-  for (let i = start + 1; i < end; i++) {
-    const m = /^([a-z][a-z-]*):/.exec(lines[i]);
-    if (!m) continue;
-    const pos = R_FIELD_ORDER.indexOf(m[1]);
-    if (pos !== -1 && pos < mine) at = i + 1;
-  }
-  return at;
-}
-function addRecurring(manifest, fields) {
-  if (!fields.title) throw new BoardRejected('recurring add: a "<title>" is required');
-  if (!fields.every) throw new BoardRejected("recurring add: --every is required");
-  if (!fields.do) throw new BoardRejected("recurring add: --do is required");
-  if (fields.exec === "-" || fields.model === "-" || fields.reasoning === "-") {
-    throw new BoardRejected('recurring add: "-" clears a field; add has nothing to clear -- omit the flag');
-  }
-  if (fields.lastDone === "-") {
-    throw new BoardRejected('recurring add: omit --last-done for a never-run chore; "-" is only for set');
-  }
-  validateRecurringFields(fields, { exec: fields.exec ?? "", model: fields.model ?? "", reasoning: fields.reasoning ?? "" });
-  const lines = readLines(manifest);
-  const idRe = /^R([0-9]+)$/;
-  let max = 0;
-  for (const b of parseManifestBlocks(lines.join("\n")).blocks) {
-    const m = idRe.exec(b.id);
-    if (m) max = Math.max(max, parseInt(m[1], 10));
-  }
-  const id = `R${String(max + 1).padStart(2, "0")}`;
-  const block = [
-    `## ${id} [recurring] ${fields.title}`,
-    `every: ${fields.every}`,
-    ...fields.lastDone ? [`last-done: ${fields.lastDone}`] : [],
-    ...fields.exec ? [`exec: ${fields.exec}`] : [],
-    ...fields.model ? [`model: ${fields.model}`] : [],
-    ...fields.reasoning ? [`reasoning: ${fields.reasoning}`] : [],
-    `do: ${fields.do}`
-  ];
-  const rBlocks = parseManifestBlocks(lines.join("\n"), RECURRING_ID_RE).blocks;
-  const out2 = [...lines];
-  if (rBlocks.length) {
-    const lastBlock = rBlocks[rBlocks.length - 1];
-    out2.splice(coreEnd(lines, lastBlock.start, lastBlock.end), 0, "", ...block);
-  } else {
-    while (out2.length && out2[out2.length - 1].trim() === "") out2.pop();
-    out2.push("", ...block);
-  }
-  writeGuarded(manifest, lines, out2, 1);
-  return id;
-}
-function setRecurring(manifest, id, fields) {
-  const lines = readLines(manifest);
-  const block = findR(lines, id);
-  if (!block) throw new BoardRejected(`recurring set: no such recurring task: ${id}`);
-  const cur = (k) => block.fields.get(k)?.trim() ?? "";
-  const pick = (v, k) => v === void 0 ? cur(k) : v === "-" ? "" : v;
-  if (fields.every === "-" || fields.do === "-" || fields.title === "-") {
-    throw new BoardRejected(
-      'recurring set: "-" clears only --exec, --model, --reasoning and --last-done; every:, do: and the title are required'
-    );
-  }
-  validateRecurringFields(fields, {
-    exec: pick(fields.exec, "exec"),
-    model: pick(fields.model, "model"),
-    reasoning: pick(fields.reasoning, "reasoning")
-  });
-  let out2 = [...lines];
-  let end = block.end;
-  if (fields.title !== void 0) out2[block.start] = `## ${id} [recurring] ${fields.title}`;
-  const edits = [
-    ["every", fields.every],
-    ["last-done", fields.lastDone],
-    ["exec", fields.exec],
-    ["model", fields.model],
-    ["reasoning", fields.reasoning],
-    ["do", fields.do]
-  ];
-  for (const [name, value] of edits) {
-    if (value === void 0) continue;
-    const re = new RegExp(`^${name}:(\\s|$)`);
-    const kept = out2.filter((l, i) => i <= block.start || i >= end || !re.test(l));
-    end -= out2.length - kept.length;
-    out2 = kept;
-    if (value === "-") continue;
-    out2.splice(fieldSlot(out2, block.start, end, name), 0, `${name}: ${value}`);
-    end++;
-  }
-  if (out2.join("\n") === lines.join("\n")) return false;
-  writeGuarded(manifest, lines, out2, 0);
-  return true;
-}
-function dropRecurring(manifest, id) {
-  if (!RECURRING_ID_RE.test(id)) throw new BoardRejected(`recurring drop: drop takes an exact R<NN> id (got "${id}")`);
-  const lines = readLines(manifest);
-  const block = findR(lines, id);
-  if (!block) throw new BoardRejected(`recurring drop: no such recurring task: ${id} -- drop takes exact ids, never a prefix`);
-  const out2 = [...lines];
-  out2.splice(block.start, coreEnd(lines, block.start, block.end) - block.start);
-  while (block.start < out2.length && out2[block.start].trim() === "" && (block.start === 0 || out2[block.start - 1].trim() === "")) {
-    out2.splice(block.start, 1);
-  }
-  while (out2.length && out2[out2.length - 1].trim() === "") out2.pop();
-  writeGuarded(manifest, lines, out2, -1);
-  return block.title;
-}
-
-// src/tasks/boardClaim.ts
-import { existsSync as existsSync11, readFileSync as readFileSync10 } from "node:fs";
-import { hostname } from "node:os";
-
-// src/tasks/manifestReader.ts
-import { existsSync as existsSync10, readdirSync as readdirSync3, readFileSync as readFileSync9, statSync as statSync3 } from "node:fs";
-import { join as join8 } from "node:path";
-var STATUS_LOG_REL = [".local", "tasks", "status.log"];
-var STATUS_TASKS_DIR_REL = [".local", "tasks"];
-var STATUS_D_REL = [".local", "tasks", "status.d"];
-var ID_PATTERN = "(?:T\\d+|R\\d+|k[0-9a-hjkmnp-tv-z]{4})";
-var LIST_ITEM_RE = /^\s+-\s+(.+)$/;
-var FORK_LINE_RE = /^fork:/;
-var ID_TOKEN_RE = new RegExp(`^${ID_PATTERN}$`);
-var EFFORT_RE = /^[SML]$/;
-var PRIORITY_RE = /^p[0-2]$/;
-var NO_VALUE = "-";
-var KNOWN_STATUSES = TASK_STATUS_SET;
-function resolveRepoRoot(cwd) {
-  return repoRootStrict(cwd);
-}
-function findManifest(repoRoot) {
-  for (const p of manifestCandidates(repoRoot)) {
-    if (!existsSync10(p)) continue;
-    try {
-      return { path: p, content: readFileSync9(p, "utf8") };
-    } catch (err) {
-      process.stderr.write(
-        `manifestReader: cannot read ${p}: ${err.message}
-`
-      );
-    }
-  }
-  return null;
-}
-function listDirSafe(dir) {
-  try {
-    return readdirSync3(dir);
-  } catch {
-    return [];
-  }
-}
-function collectOverlaySources(repoRoot) {
-  const sources = [];
-  const addIfReadable = (p) => {
-    try {
-      sources.push({ path: p, mtimeNs: statSync3(p, { bigint: true }).mtimeNs });
-    } catch {
-    }
-  };
-  const mainLog = join8(repoRoot, ...STATUS_LOG_REL);
-  if (existsSync10(mainLog)) addIfReadable(mainLog);
-  const tasksDir = join8(repoRoot, ...STATUS_TASKS_DIR_REL);
-  if (existsSync10(tasksDir)) {
-    for (const name of listDirSafe(tasksDir)) {
-      if (name.startsWith("status.log.snap.")) addIfReadable(join8(tasksDir, name));
-    }
-  }
-  const statusD = join8(repoRoot, ...STATUS_D_REL);
-  if (existsSync10(statusD)) {
-    for (const name of listDirSafe(statusD)) {
-      if (name.startsWith(".tmp.")) continue;
-      if (!name.endsWith(".log")) continue;
-      addIfReadable(join8(statusD, name));
-    }
-  }
-  return sources;
-}
-function parseOverlayLine(line) {
-  const trimmed = line.trim();
-  if (trimmed === "" || trimmed.startsWith("#")) return null;
-  const fields = trimmed.split("	");
-  if (fields.length < 4) return null;
-  const id = fields[2];
-  const status = fields[3];
-  if (!ID_TOKEN_RE.test(id)) return null;
-  if (!KNOWN_STATUSES.has(status)) return null;
-  return { id, status };
-}
-function applyStatusOverlay(tasks, repoRoot) {
-  const sources = collectOverlaySources(repoRoot);
-  if (sources.length === 0) return;
-  const overrides = /* @__PURE__ */ new Map();
-  for (const line of orderOverlayLines(sources.map((s) => s.path)).text.split("\n")) {
-    const parsed = parseOverlayLine(line);
-    if (parsed) overrides.set(parsed.id, parsed.status);
-  }
-  for (const t of tasks) {
-    const ov = overrides.get(t.id);
-    if (ov) t.status = ov;
-  }
-}
-function parseDeps(raw) {
-  return raw.split(/[,\s]+/).filter((s) => s !== "" && s !== "-");
-}
-function fieldValue(block, key) {
-  return block.fields.get(key)?.trim();
-}
-function presentValue(block, key) {
-  const v = fieldValue(block, key);
-  return v === void 0 || v === "" || v === NO_VALUE ? void 0 : v;
-}
-function forkEntries(lines, fenced, block) {
-  let entries;
-  for (let i = block.start + 1; i < block.end; i++) {
-    if (fenced[i] || !FORK_LINE_RE.test(lines[i])) continue;
-    const found = [];
-    for (let j = i + 1; j < block.end && !fenced[j]; j++) {
-      const next = lines[j];
-      if (next.trim() === "") continue;
-      const item2 = LIST_ITEM_RE.exec(next);
-      if (!item2) break;
-      found.push(item2[1].trim());
-    }
-    entries = found;
-  }
-  return entries !== void 0 && entries.length >= 2 ? entries : void 0;
-}
-function toTask(block, status, manifestPath, fork) {
-  const exec = fieldValue(block, "exec");
-  const model = fieldValue(block, "model");
-  const blocker = presentValue(block, "blocker");
-  const doText = fieldValue(block, "do");
-  const doneWhen = fieldValue(block, "done-when");
-  const area = presentValue(block, "area");
-  const path = fieldValue(block, "path");
-  const effort = fieldValue(block, "effort");
-  const reasoning = fieldValue(block, "reasoning");
-  const priority = fieldValue(block, "priority");
-  const created = fieldValue(block, "created");
-  const duplicateOf = presentValue(block, "duplicate-of");
-  const createdBy = presentValue(block, "created-by");
-  const deps = fieldValue(block, "deps");
-  return {
-    id: block.id,
-    status,
-    baseStatus: status,
-    title: block.title,
-    deps: deps === void 0 ? [] : parseDeps(deps),
-    ...exec !== void 0 && { exec },
-    ...model !== void 0 && { model },
-    ...blocker !== void 0 && { blocker },
-    ...doText !== void 0 && { do: doText },
-    ...doneWhen !== void 0 && { doneWhen },
-    ...area !== void 0 && { area },
-    ...path !== void 0 && { path },
-    ...fork !== void 0 && { fork },
-    ...effort !== void 0 && EFFORT_RE.test(effort) && { effort },
-    ...exec === "agent" && reasoning !== void 0 && VALID_REASONING.has(reasoning) && { reasoning },
-    ...priority !== void 0 && PRIORITY_RE.test(priority) && { priority },
-    ...created !== void 0 && { created },
-    ...duplicateOf !== void 0 && { duplicateOf },
-    ...createdBy !== void 0 && { createdBy },
-    manifestPath,
-    line: block.start + 1
-  };
-}
-function parseManifest(manifestPath, content) {
-  const { blocks, warnings } = parseManifestBlocks(content, TASK_ID_RE);
-  const lines = content.split("\n");
-  const fenced = fencedLineFlags(lines);
-  const tasks = [];
-  for (const block of blocks) {
-    if (block.status === null || !isTaskStatus(block.status)) continue;
-    tasks.push(toTask(block, block.status, manifestPath, forkEntries(lines, fenced, block)));
-  }
-  if (tasks.length === 0 && content.includes("\r\n")) {
-    warnings.push(
-      `taskboard: ${manifestPath} has CRLF line endings, so no task header parses and the board reads as empty -- convert it to LF (/cyberine-taskboard:tasks doctor reports the same)`
-    );
-  }
-  return { tasks, warnings };
-}
-function findManifestPath(cwd) {
-  const repoRoot = resolveRepoRoot(cwd);
-  if (!repoRoot) return null;
-  return findManifest(repoRoot)?.path ?? null;
-}
-var NO_MANIFEST_MESSAGE = "no manifest found. create .claude/TASKS.md (or .local/tasks/ACTIVE.md) to populate the runnable set.";
-function emptyManifestMessage(cwd) {
-  const path = findManifestPath(cwd);
-  if (path === null) return NO_MANIFEST_MESSAGE;
-  return `board is empty: ${path} exists but holds no task block yet. add tasks (/cyberine-taskboard:tasks add) to populate the runnable set.`;
-}
-function readManifestReport(cwd) {
-  const repoRoot = resolveRepoRoot(cwd);
-  if (!repoRoot) {
-    process.stderr.write(
-      `manifestReader: not inside a git repository (cwd=${cwd}); returning empty task list
-`
-    );
-    return { tasks: [], warnings: [] };
-  }
-  return readManifestReportAt(repoRoot);
-}
-function readManifestReportAt(repoRoot) {
-  const manifest = findManifest(repoRoot);
-  if (!manifest) return { tasks: [], warnings: [] };
-  const report = parseManifest(manifest.path, manifest.content);
-  applyStatusOverlay(report.tasks, repoRoot);
-  return report;
-}
-
-// src/tasks/boardClaim.ts
-function parseLease(value) {
-  if (!value) return null;
-  const parts = value.trim().split(/\s+/);
-  if (parts.length < 2) return null;
-  const owner = parts[0];
-  const expiresAt = Number(parts[1]);
-  if (!owner || !Number.isFinite(expiresAt)) return null;
-  return { owner, expiresAt };
-}
-function claimOwner() {
-  const session = boardEnv("CYBERINE_TASKS_SESSION") || agentTag();
-  return `${session.replace(/\s+/g, "_")}@${normalizeHost(hostname())}`;
-}
-function leaseRefusal(paths, id, caller = claimOwner(), now = Date.now()) {
-  const manifestSrc = readFileSync10(paths.manifest, "utf8");
-  const statusBy = new Map(fold(paths.manifest, paths).map((t) => [t.id, t.status]));
-  if (statusBy.get(id) !== "doing") return null;
-  const block = parseManifestBlocks(manifestSrc, TASK_ID_RE).blocks.find((b) => b.id === id);
-  const lease = parseLease(block?.fields.get("lease"));
-  if (!lease) return null;
-  if (lease.owner !== caller) {
-    return `${id} is held by ${lease.owner}, not ${caller} -- a claim is never written over; re-claim it (/cyberine-taskboard:tasks run) if it is free`;
-  }
-  if (lease.expiresAt < now) {
-    return `your lease on ${id} expired -- it may have been reclaimed by another session; re-claiming is not automatic, run \`/cyberine-taskboard:tasks run\` rather than keep writing`;
-  }
-  return null;
-}
-
 // src/tasks/boardNote.ts
-import { existsSync as existsSync12, readFileSync as readFileSync11 } from "node:fs";
+import { existsSync as existsSync7, readFileSync as readFileSync6 } from "node:fs";
 var FLAG_RE = /^--?[A-Za-z]/;
 function resolveLiveTaskId(paths, rawId, cmd) {
   if (RECURRING_ID_RE.test(rawId)) {
     throw new BoardRejected(`${cmd}: ${rawId} is a recurring block -- ${cmd} only annotates task blocks`);
   }
-  const { blocks } = parseManifestBlocks(readFileSync11(paths.manifest, "utf8"));
+  const { blocks } = parseManifestBlocks(readFileSync6(paths.manifest, "utf8"));
   const live = new Set(blocks.filter((b) => TASK_ID_RE.test(b.id)).map((b) => b.id));
   const archived = archivedIds(paths.archive);
   let id;
@@ -3288,7 +2270,7 @@ function isTrailing(line) {
   return t === "" || /^<!--.*-->$/.test(t);
 }
 function appendUpdateLine(manifest, id, text, date = todayLocalDate()) {
-  const src = readFileSync11(manifest, "utf8");
+  const src = readFileSync6(manifest, "utf8");
   const lines = src.endsWith("\n") ? src.split("\n").slice(0, -1) : src.split("\n");
   const block = parseManifestBlocks(lines.join("\n")).blocks.find((b) => b.id === id);
   if (!block) throw new BoardRejected(`note: no such task: ${id}`);
@@ -3302,12 +2284,12 @@ function appendUpdateLine(manifest, id, text, date = todayLocalDate()) {
 }
 var UPDATES_HEADING = "## Updates";
 function addBriefUpdate(briefPath, text, date = todayLocalDate()) {
-  if (!existsSync12(briefPath)) {
+  if (!existsSync7(briefPath)) {
     throw new BoardRejected(
       `brief note: no brief at ${briefPath} -- nothing to annotate; use \`note <id>\` for the manifest block`
     );
   }
-  const src = readFileSync11(briefPath, "utf8");
+  const src = readFileSync6(briefPath, "utf8");
   const lines = src.endsWith("\n") ? src.split("\n").slice(0, -1) : src.split("\n");
   const fenced = fencedLineFlags(lines);
   const isHeading = (i) => !fenced[i] && /^## /.test(lines[i]);
@@ -3336,203 +2318,7 @@ function addBriefUpdate(briefPath, text, date = todayLocalDate()) {
 }
 
 // src/tasks/boardSuggest.ts
-import { existsSync as existsSync13, readFileSync as readFileSync13 } from "node:fs";
-
-// src/tasks/boardTidy.ts
-import { readFileSync as readFileSync12 } from "node:fs";
-var TIDY_MARKER = "<!-- ===== FORBIDDEN \u2014 never run, permanent tombstones (board tidy) ===== -->";
-var ANY_TIDY_MARKER_RE = /^<!-- ===== FORBIDDEN — never run, permanent tombstones \([a-z /:-]*(?:tasks|board) tidy\) ===== -->$/;
-var TOKENS_HEADER = "<!-- Task board manifest v1. Status tokens: [backlog] [todo] [doing] [done] [forbidden]. -->";
-var STALE_HEADER_NOTE = "<!-- The [status] bracket can lag the overlay: a status flip lands in the overlay first and reaches this header only at reconcile, so read status through the CLI (status --json), never by grepping headers. -->";
-var STALE_HEADER_MARKER = "can lag the overlay";
-var FORBIDDEN_HEADER_RE = new RegExp(`^## ${TASK_ID_SOURCE} \\[forbidden\\]`);
-var CANDIDATE_HEADER_RE = new RegExp(`^## (${TASK_ID_SOURCE}) \\[(todo|backlog)\\]`);
-var TITLE_STRIP_RE = new RegExp(`^## ${TASK_ID_SOURCE} \\[[a-z]+\\] `);
-function splitLines(src) {
-  return src.endsWith("\n") ? src.slice(0, -1).split("\n") : src.split("\n");
-}
-function writeManifestSafely(manifest, out2) {
-  if (out2.length === 0) return false;
-  writeFileAtomic(manifest, out2, "tidy");
-  return true;
-}
-function refreshHeaderTokens(src) {
-  const lines = splitLines(src);
-  const hasTokensLine = lines.some((l) => l.includes("Status tokens:"));
-  const hasForbiddenTokensLine = lines.some((l) => l.includes("Status tokens:") && l.includes("[forbidden]"));
-  if (!hasTokensLine || hasForbiddenTokensLine) return null;
-  let done = false;
-  const out2 = lines.map((l) => {
-    if (!done && /^<!--/.test(l) && l.includes("Status tokens:")) {
-      done = true;
-      return TOKENS_HEADER;
-    }
-    return l;
-  });
-  return out2.join("\n") + (src.endsWith("\n") ? "\n" : "");
-}
-function ensureStaleHeaderNote(src) {
-  const lines = splitLines(src);
-  if (lines.some((l) => /^<!--/.test(l) && l.includes(STALE_HEADER_MARKER))) return null;
-  const anchor = lines.findIndex((l) => /^<!--/.test(l) && l.includes("Task header format is parsed"));
-  const fallback = lines.findIndex((l) => /^<!--/.test(l) && l.includes("Status tokens:"));
-  const at = anchor !== -1 ? anchor : fallback;
-  if (at === -1) return null;
-  lines.splice(at + 1, 0, STALE_HEADER_NOTE);
-  return lines.join("\n") + (src.endsWith("\n") ? "\n" : "");
-}
-function addStaleHeaderNoteLocked(manifest) {
-  const out2 = ensureStaleHeaderNote(readFileSync12(manifest, "utf8"));
-  return out2 !== null && writeManifestSafely(manifest, out2);
-}
-function groupForbidden(src) {
-  const lines = splitLines(src);
-  const fenced = fencedLineFlags(lines);
-  const nForbidden = lines.filter((l, i) => !fenced[i] && FORBIDDEN_HEADER_RE.test(l)).length;
-  if (nForbidden === 0) return null;
-  const bodyLines = [];
-  const fbBlocks = [];
-  let inForbidden = false;
-  let block = "";
-  const flush = () => {
-    if (block !== "") fbBlocks.push(block);
-    block = "";
-  };
-  for (let i = 0; i < lines.length; i++) {
-    const l = lines[i];
-    if (!fenced[i] && ANY_TIDY_MARKER_RE.test(l)) continue;
-    if (!fenced[i] && FORBIDDEN_HEADER_RE.test(l)) {
-      flush();
-      inForbidden = true;
-      block = l;
-      continue;
-    }
-    if (!fenced[i] && /^## /.test(l)) {
-      flush();
-      inForbidden = false;
-      bodyLines.push(l);
-      continue;
-    }
-    if (inForbidden) {
-      block += `
-${l}`;
-      continue;
-    }
-    bodyLines.push(l);
-  }
-  flush();
-  if (fbBlocks.join("").length === 0) return null;
-  const collapsed = [];
-  let blanks = 0;
-  for (const l of bodyLines) {
-    if (/^\s*$/.test(l)) {
-      blanks++;
-      continue;
-    }
-    while (blanks > 0) {
-      collapsed.push("");
-      blanks--;
-    }
-    collapsed.push(l);
-  }
-  collapsed.push("");
-  const partA = `${collapsed.join("\n")}
-`;
-  const partB = `${TIDY_MARKER}
-
-`;
-  const partC = fbBlocks.map((b) => `${b}
-`).join("");
-  return { out: partA + partB + partC, count: nForbidden };
-}
-function refreshHeaderTokensPreview(src) {
-  return refreshHeaderTokens(src) !== null;
-}
-function groupForbiddenPreview(src) {
-  const grouped = groupForbidden(src);
-  return grouped !== null && grouped.out !== src;
-}
-function findCandidates(src) {
-  const candidates = [];
-  let cur = "";
-  let st = "";
-  let title = "";
-  let flag = false;
-  const emit = () => {
-    if (cur !== "" && flag) candidates.push(`  ${cur} [${st}] ${title}`);
-  };
-  const lines = splitLines(src);
-  const fenced = fencedLineFlags(lines);
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i];
-    if (fenced[i]) continue;
-    const h = line.match(CANDIDATE_HEADER_RE);
-    if (h) {
-      emit();
-      cur = h[1];
-      st = h[2];
-      title = line.replace(TITLE_STRIP_RE, "");
-      flag = /FORBIDDEN|NEVER RUN|DO NOT/.test(title);
-      continue;
-    }
-    if (/^## /.test(line)) {
-      emit();
-      cur = "";
-      flag = false;
-      continue;
-    }
-    if (cur !== "" && /^blocker:\s/.test(line)) {
-      if (/FORBIDDEN|ruled out|[Dd]o not run|DO NOT/.test(line)) flag = true;
-    }
-    if (cur !== "" && /^do:\s/.test(line)) {
-      if (/[Ff]orbidden/.test(line)) flag = true;
-    }
-  }
-  emit();
-  return candidates;
-}
-function tidyBoard(paths) {
-  if (!lockAndMigrate(paths.lock, paths.manifest)) {
-    throw new Error("tidy: could not acquire the board lock -- nothing changed");
-  }
-  let changed = false;
-  let refreshedHeader = false;
-  let groupedCount = 0;
-  try {
-    if (!reconcileLocked(paths)) {
-      throw new Error("tidy: reconcile failed, so the manifest is not in a known state -- nothing changed");
-    }
-    {
-      const src2 = readFileSync12(paths.manifest, "utf8");
-      const out2 = refreshHeaderTokens(src2);
-      if (out2 !== null && writeManifestSafely(paths.manifest, out2)) {
-        refreshedHeader = true;
-        changed = true;
-      }
-    }
-    {
-      const src2 = readFileSync12(paths.manifest, "utf8");
-      const out2 = ensureStaleHeaderNote(src2);
-      if (out2 !== null && writeManifestSafely(paths.manifest, out2)) {
-        refreshedHeader = true;
-        changed = true;
-      }
-    }
-    {
-      const src2 = readFileSync12(paths.manifest, "utf8");
-      const grouped = groupForbidden(src2);
-      if (grouped && writeManifestSafely(paths.manifest, grouped.out)) {
-        groupedCount = grouped.count;
-        changed = true;
-      }
-    }
-  } finally {
-    unlock(paths.lock);
-  }
-  const src = readFileSync12(paths.manifest, "utf8");
-  const candidates = findCandidates(src);
-  return { refreshedHeader, groupedCount, candidates, changed };
-}
+import { existsSync as existsSync8, readFileSync as readFileSync7 } from "node:fs";
 
 // scripts/taskboard-bundle/boardSurfaceStub.ts
 var FLEET_DISPATCH = false;
@@ -3540,7 +2326,7 @@ var FLEET_DISPATCH = false;
 // src/tasks/boardSuggest.ts
 function suggestReport(paths, cwd) {
   const lines = [];
-  const hasManifest = existsSync13(paths.manifest);
+  const hasManifest = existsSync8(paths.manifest);
   const draftCount = draftNames(paths.draftsDir).length;
   let todoCount = 0;
   let doneCount = 0;
@@ -3552,7 +2338,7 @@ function suggestReport(paths, cwd) {
   let healthSection = [];
   lines.push("State:");
   if (hasManifest) {
-    const src = readFileSync13(paths.manifest, "utf8");
+    const src = readFileSync7(paths.manifest, "utf8");
     const view = boardView(paths, cwd, false);
     const doingCount = view.doing.length;
     todoCount = view.todo.length + view.blocked.length;
@@ -3627,345 +2413,6 @@ function suggestReport(paths, cwd) {
   return lines;
 }
 
-// src/tasks/boardHygiene.ts
-import { existsSync as existsSync14, readFileSync as readFileSync14 } from "node:fs";
-import { join as join9 } from "node:path";
-var HYGIENE_SCHEMA = "board-hygiene/1";
-var LIVE_STATUSES = /* @__PURE__ */ new Set(["todo", "doing", "backlog"]);
-var STATUS_RANK = { doing: 3, todo: 2, backlog: 1 };
-var NEAR_THRESHOLD = 0.8;
-var NEAR_LIMIT = 1500;
-var OWNER_TITLE_RE = /^\s*Owner:/i;
-var DECIDE_RE = /\b(decid\w*|decision|choose|pick a|pick one|rule on|ruling|settle|sign-?off|keep or|which of)\b/i;
-var PROVISION_RE = /\b(api[- ]key|credential\w*|secret|funded?|funding|purchase|subscri\w+|provision\w*|billing|create the (?:public )?repo|domain|account)\b/i;
-var OPERATOR_RE = /^\s*(?:operator|owner)\b|\boperator[- ](?:only|check|decision|live)\b/i;
-var UPDATE_LINE_RE = /^update \d{4}-\d{2}-\d{2}:\s*(.*)$/;
-var UPDATE_DECISION_RE = /\b(?:awaiting|waiting (?:on|for)|needs?|pending|blocked on)\b[^.;]{0,60}\b(?:decision|ruling|operator|owner)\b/i;
-var TITLE_DECISION_RE = /\b(decide|decision|choose|ruling)\b/i;
-function splitDeps(raw) {
-  if (raw === void 0) return [];
-  return raw.split(/[,\s]+/).filter((s) => s !== "" && s !== "-");
-}
-function normalizeText(s) {
-  return (s ?? "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
-}
-function exactText(s) {
-  return (s ?? "").replace(/\s+/g, " ").trim();
-}
-function jaccard(a, b) {
-  if (a.size === 0 || b.size === 0) return 0;
-  let inter = 0;
-  for (const t of a) if (b.has(t)) inter++;
-  return inter / (a.size + b.size - inter);
-}
-function classify(text) {
-  if (DECIDE_RE.test(text)) return "decide";
-  if (PROVISION_RE.test(text)) return "provision";
-  if (OPERATOR_RE.test(text)) return "operator-action";
-  return null;
-}
-function pairKey(a, b) {
-  return a < b ? `${a}|${b}` : `${b}|${a}`;
-}
-function buildContext(paths) {
-  const src = readFileSync14(paths.manifest, "utf8");
-  const { blocks } = parseManifestBlocks(src, TASK_ID_RE);
-  const rawLog = readOverlayText(paths);
-  const plan = planReconcile(paths, rawLog, src);
-  const effective = /* @__PURE__ */ new Map();
-  for (const b of blocks) {
-    const ov = plan.overlay.get(b.id);
-    effective.set(b.id, ov !== void 0 && !plan.refusedHeaders.has(b.id) ? ov : b.status ?? "");
-  }
-  const archive = archivedIds(paths.archive);
-  const universe = /* @__PURE__ */ new Set([...blocks.map((b) => b.id), ...archive]);
-  return { src, blocks, effective, archive, universe };
-}
-function liveBlocks(ctx) {
-  return ctx.blocks.filter((b) => {
-    if (b.malformed) return false;
-    if (!LIVE_STATUSES.has(ctx.effective.get(b.id) ?? "")) return false;
-    const dup = b.fields.get("duplicate-of")?.trim();
-    return !(dup && dup !== "-");
-  });
-}
-function staleHeaders(paths, ctx) {
-  const plan = planReconcile(paths, readOverlayText(paths), ctx.src);
-  const out2 = [];
-  for (const b of ctx.blocks) {
-    if (b.malformed || b.status === null) continue;
-    const ov = plan.overlay.get(b.id);
-    if (ov === void 0 || plan.refusedHeaders.has(b.id)) continue;
-    if (!TASK_STATUSES.includes(ov)) continue;
-    if (ov !== b.status) out2.push({ id: b.id, header: b.status, effective: ov });
-  }
-  return out2;
-}
-function ledgerSurvivor(paths, dead, universe) {
-  const merged = readLedger(paths.ledger).filter((e) => e.verdict === "merged");
-  let cur = dead;
-  const seen = /* @__PURE__ */ new Set([dead]);
-  for (let hop = 0; hop < 12; hop++) {
-    const targets = [...new Set(merged.filter((e) => e.a === cur).map((e) => e.b))];
-    if (targets.length === 0) break;
-    if (targets.length > 1) return { target: null, via: `ledger lists ${cur} merged into several ids (${targets.join(", ")})` };
-    cur = targets[0];
-    if (seen.has(cur)) return { target: null, via: "ledger merge chain loops" };
-    seen.add(cur);
-    if (universe.has(cur)) return { target: cur, via: `merged into ${cur} (dedupe ledger)` };
-  }
-  return { target: null, via: "no replacement known" };
-}
-function deadDeps(paths, ctx) {
-  const out2 = [];
-  for (const b of ctx.blocks) {
-    if (b.malformed) continue;
-    const st = ctx.effective.get(b.id) ?? "";
-    if (st === "done" || st === "forbidden") continue;
-    for (const dep of splitDeps(b.fields.get("deps"))) {
-      if (ctx.universe.has(dep)) continue;
-      let replacement = null;
-      let via;
-      const ledger = ledgerSurvivor(paths, dep, ctx.universe);
-      if (ledger.target !== null) {
-        replacement = ledger.target;
-        via = ledger.via;
-      } else {
-        const cased = [dep.toUpperCase(), dep.toLowerCase()].filter((c) => c !== dep && ctx.universe.has(c));
-        if (cased.length === 1) {
-          replacement = cased[0];
-          via = `same id in the other letter case (${cased[0]})`;
-        } else {
-          via = ledger.via;
-        }
-      }
-      if (replacement === b.id) {
-        replacement = null;
-        via = "the only replacement is the task itself";
-      }
-      out2.push({ id: b.id, dep, replacement, via });
-    }
-  }
-  return out2;
-}
-function duplicates(paths, ctx) {
-  const live = liveBlocks(ctx);
-  const ledgerPairs = new Set(readLedger(paths.ledger).map((e) => pairKey(e.a, e.b)));
-  const dependents = /* @__PURE__ */ new Map();
-  for (const b of ctx.blocks) for (const d of splitDeps(b.fields.get("deps"))) dependents.set(d, (dependents.get(d) ?? 0) + 1);
-  const position = new Map(ctx.blocks.map((b, i) => [b.id, i]));
-  const hasBrief = (id) => existsSync14(join9(paths.tasksDir, `${id}.md`));
-  const survivorOf = (group) => {
-    const ranked = [...group].sort((x, y) => {
-      const sx = STATUS_RANK[ctx.effective.get(x.id) ?? ""] ?? 0;
-      const sy = STATUS_RANK[ctx.effective.get(y.id) ?? ""] ?? 0;
-      if (sx !== sy) return sy - sx;
-      const bx = hasBrief(x.id) ? 1 : 0;
-      const by = hasBrief(y.id) ? 1 : 0;
-      if (bx !== by) return by - bx;
-      const dx = dependents.get(x.id) ?? 0;
-      const dy = dependents.get(y.id) ?? 0;
-      if (dx !== dy) return dy - dx;
-      const cx = x.fields.get("created")?.trim() ?? "9999";
-      const cy = y.fields.get("created")?.trim() ?? "9999";
-      if (cx !== cy) return cx < cy ? -1 : 1;
-      return (position.get(x.id) ?? 0) - (position.get(y.id) ?? 0);
-    });
-    const doingCount = group.filter((g) => ctx.effective.get(g.id) === "doing").length;
-    return doingCount > 1 ? null : ranked[0].id;
-  };
-  const out2 = [];
-  const grouped = /* @__PURE__ */ new Set();
-  const exact = /* @__PURE__ */ new Map();
-  for (const b of live) {
-    const t = exactText(b.title);
-    const d = exactText(b.fields.get("do"));
-    if (t === "" || d === "") continue;
-    const key = `${t}\0${d}`;
-    const list = exact.get(key) ?? [];
-    list.push(b);
-    exact.set(key, list);
-  }
-  for (const group of exact.values()) {
-    if (group.length < 2) continue;
-    const rejectedInside = group.some((x, i) => group.slice(i + 1).some((y) => ledgerPairs.has(pairKey(x.id, y.id))));
-    if (group.length === 2 && rejectedInside) continue;
-    const ranked = survivorOf(group);
-    const survivor = rejectedInside ? null : ranked;
-    for (const g of group) grouped.add(g.id);
-    out2.push({
-      kind: "exact",
-      ids: group.map((g) => g.id),
-      survivor,
-      reason: rejectedInside ? "same title and same do: text, but the ledger rejects a pair among them, so none is merged automatically" : ranked === null ? "same title and same do: text, several are [doing]" : "same title and same do: text"
-    });
-  }
-  if (live.length <= NEAR_LIMIT) {
-    const tokens = new Map(live.map((b) => [b.id, new Set(normalizeText(b.title).split(" ").filter((w) => w.length > 2))]));
-    for (let i = 0; i < live.length; i++) {
-      for (let j = i + 1; j < live.length; j++) {
-        const a = live[i];
-        const b = live[j];
-        if (grouped.has(a.id) && grouped.has(b.id)) continue;
-        if (ledgerPairs.has(pairKey(a.id, b.id))) continue;
-        const ta = normalizeText(a.title);
-        const tb = normalizeText(b.title);
-        const sameTitle = ta !== "" && ta === tb;
-        const score = sameTitle ? 1 : jaccard(tokens.get(a.id), tokens.get(b.id));
-        if (score < NEAR_THRESHOLD) continue;
-        out2.push({
-          kind: "near",
-          ids: [a.id, b.id],
-          survivor: survivorOf([a, b]),
-          reason: sameTitle ? "same title, different do: text" : `title word overlap ${score.toFixed(2)}`
-        });
-      }
-    }
-  }
-  return out2;
-}
-function blockLines(ctx, b) {
-  const lines = ctx.src.split("\n");
-  const fenced = fencedLineFlags(lines);
-  const out2 = [];
-  for (let i = b.start + 1; i < b.end; i++) if (!fenced[i]) out2.push({ line: lines[i], index: i });
-  return out2;
-}
-function buriedDecisions(ctx) {
-  const out2 = [];
-  const ownerTasks = new Set(ctx.blocks.filter((b) => OWNER_TITLE_RE.test(b.title)).map((b) => b.id));
-  for (const b of liveBlocks(ctx)) {
-    const exec = b.fields.get("exec")?.trim() || "agent";
-    if (exec === "manual" || OWNER_TITLE_RE.test(b.title)) continue;
-    if (splitDeps(b.fields.get("deps")).some((d) => ownerTasks.has(d))) continue;
-    const blocker = b.fields.get("blocker")?.trim();
-    if (blocker && blocker !== "-") {
-      const cls = classify(blocker);
-      if (cls !== null) out2.push({ id: b.id, source: "blocker", class: cls, exec, text: blocker });
-    }
-    if (TITLE_DECISION_RE.test(b.title)) {
-      out2.push({ id: b.id, source: "title", class: "decide", exec, text: b.title });
-    }
-    for (const { line } of blockLines(ctx, b)) {
-      const m = UPDATE_LINE_RE.exec(line);
-      if (m && UPDATE_DECISION_RE.test(m[1])) {
-        out2.push({ id: b.id, source: "update", class: classify(m[1]) ?? "decide", exec, text: m[1].trim() });
-      }
-    }
-  }
-  return out2;
-}
-function analyzeHygiene(paths) {
-  const ctx = buildContext(paths);
-  const forbiddenTotal = ctx.blocks.filter((b) => ctx.effective.get(b.id) === "forbidden" || b.status === "forbidden").length;
-  return {
-    schema: HYGIENE_SCHEMA,
-    staleHeaders: staleHeaders(paths, ctx),
-    headerTokensStale: refreshHeaderTokensPreview(ctx.src),
-    forbiddenTotal,
-    forbiddenUngrouped: groupForbiddenPreview(ctx.src),
-    deadDeps: deadDeps(paths, ctx),
-    duplicates: duplicates(paths, ctx),
-    buriedDecisions: buriedDecisions(ctx)
-  };
-}
-function hygieneIsClean(r) {
-  return r.staleHeaders.length === 0 && !r.headerTokensStale && !r.forbiddenUngrouped && r.deadDeps.length === 0 && r.duplicates.length === 0 && r.buriedDecisions.length === 0;
-}
-function quote(s, max = 110) {
-  const flat = s.replace(/\s+/g, " ").trim();
-  return flat.length > max ? `${flat.slice(0, max - 3)}...` : flat;
-}
-function formatHygiene(r, mode) {
-  const lines = [];
-  const heading = (n, text) => {
-    lines.push("");
-    lines.push(`${n}) ${text}`);
-  };
-  heading(1, `Stale status headers: ${r.staleHeaders.length}${r.headerTokensStale ? " (+ the header token list lacks [forbidden])" : ""}`);
-  for (const h of r.staleHeaders) lines.push(`  ${h.id}  manifest says [${h.header}], the overlay says [${h.effective}]`);
-  if (r.staleHeaders.length || r.headerTokensStale) lines.push("  fix: /cyberine-taskboard:tasks tidy  (reconcile + header token list + tombstones grouped; --apply runs it)");
-  heading(2, `Tombstones: ${r.forbiddenTotal} [forbidden], ${r.forbiddenUngrouped ? "not grouped at the end" : "grouped"}`);
-  lines.push("  [forbidden] blocks are permanent: they are grouped, never removed.");
-  heading(3, `Dead dep ids: ${r.deadDeps.length}`);
-  for (const d of r.deadDeps) {
-    lines.push(
-      d.replacement ? `  ${d.id}  deps on ${d.dep} (not on the board or archive) -> repoint to ${d.replacement}: ${d.via}` : `  ${d.id}  deps on ${d.dep} (not on the board or archive) -> no unambiguous replacement (${d.via}); decide, then: /cyberine-taskboard:tasks deps set ${d.id} "<ids>"`
-    );
-  }
-  heading(4, `Duplicate candidates: ${r.duplicates.length}`);
-  for (const d of r.duplicates) {
-    if (d.kind === "exact") {
-      lines.push(
-        d.survivor ? `  exact  ${d.ids.join(", ")}  (${d.reason}); survivor ${d.survivor}: ${d.ids.filter((i) => i !== d.survivor).map((i) => `/cyberine-taskboard:tasks merge ${i} ${d.survivor}`).join("; ")}` : `  exact  ${d.ids.join(", ")}  (${d.reason}); pick the survivor by hand`
-      );
-    } else {
-      lines.push(
-        `  near   ${d.ids.join(", ")}  (${d.reason}); judgement: read both, then \`/cyberine-taskboard:tasks merge <dup> <survivor>\` or \`/cyberine-taskboard:tasks merge --reject ${d.ids[0]} ${d.ids[1]}\``
-      );
-    }
-  }
-  heading(5, `Buried decisions: ${r.buriedDecisions.length}`);
-  for (const d of r.buriedDecisions) {
-    lines.push(`  ${d.id}  ${d.source} (${d.class}, exec ${d.exec}): ${quote(d.text)}`);
-  }
-  if (r.buriedDecisions.length) {
-    lines.push("  fix, per genuine one (judgement, not run by --apply):");
-    lines.push('    /cyberine-taskboard:tasks add --title "Owner: decide ..." (or "Owner: provision ...") --do ... --done-when ... --effort S --exec manual --why ...');
-    lines.push('    /cyberine-taskboard:tasks deps set <id> "<existing deps>, <new owner task id>"');
-    lines.push("    /cyberine-taskboard:tasks status unblock <id>   (when the decision lived in blocker:)");
-  }
-  lines.push("");
-  if (hygieneIsClean(r)) lines.push(mode === "preview" ? "hygiene: nothing to fix." : "hygiene: clean.");
-  else if (mode === "preview") lines.push("hygiene: preview only, nothing was written. `/cyberine-taskboard:tasks hygiene --apply` runs the mechanical fixes (1, 2, exact duplicates, unambiguous dep repoints).");
-  return lines;
-}
-function applyHygiene(paths) {
-  const actions = [];
-  const tidy = tidyBoard(paths);
-  actions.push({
-    kind: "tidy",
-    detail: `reconciled the overlay${tidy.refreshedHeader ? ", refreshed the header token list" : ""}${tidy.groupedCount ? `, grouped ${tidy.groupedCount} [forbidden] block(s) at the end` : ""}`,
-    state: "done"
-  });
-  const fresh = analyzeHygiene(paths);
-  const byTask = /* @__PURE__ */ new Map();
-  for (const d of fresh.deadDeps) byTask.set(d.id, [...byTask.get(d.id) ?? [], d]);
-  if (!lockAndMigrate(paths.lock, paths.manifest)) {
-    throw new Error("hygiene: could not acquire the board lock for the dep and merge fixes -- tidy was applied, nothing else changed");
-  }
-  try {
-    const manifestDeps = new Map(parseManifestBlocks(readFileSync14(paths.manifest, "utf8"), TASK_ID_RE).blocks.map((b) => [b.id, b]));
-    for (const [id, dead] of byTask) {
-      if (dead.some((d) => d.replacement === null)) {
-        actions.push({ kind: "repoint", detail: `${id}: skipped, ${dead.filter((d) => d.replacement === null).map((d) => d.dep).join(", ")} has no unambiguous replacement`, state: "skipped" });
-        continue;
-      }
-      const replaceMap = new Map(dead.map((d) => [d.dep, d.replacement]));
-      const current = splitDeps(manifestDeps.get(id)?.fields.get("deps"));
-      const next = [...new Set(current.map((d) => replaceMap.get(d) ?? d))];
-      try {
-        actions.push({ kind: "repoint", detail: setDeps(paths, id, next.join(", ")), state: "done" });
-      } catch (e) {
-        actions.push({ kind: "repoint", detail: `${id}: refused, ${e.message}`, state: "refused" });
-      }
-    }
-    for (const d of analyzeHygiene(paths).duplicates) {
-      if (d.kind !== "exact" || d.survivor === null) continue;
-      for (const dup of d.ids.filter((i) => i !== d.survivor)) {
-        try {
-          actions.push({ kind: "merge", detail: mergeIds(paths, dup, d.survivor), state: "done" });
-        } catch (e) {
-          actions.push({ kind: "merge", detail: `${dup} -> ${d.survivor}: refused, ${e.message}`, state: "refused" });
-        }
-      }
-    }
-  } finally {
-    unlock(paths.lock);
-  }
-  return { actions, after: analyzeHygiene(paths) };
-}
-
 // src/commands/boardIo.ts
 function out(s) {
   process.stdout.write(`${s}
@@ -4008,7 +2455,7 @@ function warnDemotedWouldRepromote() {
 }
 
 // src/tasks/boardMove.ts
-import { readFileSync as readFileSync15 } from "node:fs";
+import { readFileSync as readFileSync8 } from "node:fs";
 var MoveRejected = class extends Error {
 };
 function fail(msg) {
@@ -4052,7 +2499,7 @@ function resolveId(blocks, archiveIds, effectiveStatus, id, role) {
 }
 function moveTask(paths, moveId, position, anchorId) {
   if (moveId === anchorId) fail(`cannot move ${moveId} relative to itself`);
-  const manifestSrc = readFileSync15(paths.manifest, "utf8");
+  const manifestSrc = readFileSync8(paths.manifest, "utf8");
   const lines = manifestSrc.split("\n");
   const { blocks } = parseManifestBlocks(manifestSrc);
   const archiveIds = archiveIdsFor(paths.manifest);
@@ -4082,15 +2529,101 @@ function moveTask(paths, moveId, position, anchorId) {
   return `${moveId} -> ${position} ${anchorId}`;
 }
 
+// src/tasks/boardComments.ts
+import { readFileSync as readFileSync9 } from "node:fs";
+var CommentsRejected = class extends Error {
+};
+function fail2(msg) {
+  throw new CommentsRejected(`comments: ${msg}`);
+}
+var COMMENT_RE = /^<!--.*-->$/;
+var ID_TOKEN_RE = new RegExp(`(?<![A-Za-z0-9])${TASK_ID_SOURCE}(?![A-Za-z0-9])`, "g");
+var MANAGED_MARKERS = ["Status tokens:", "can lag the overlay", "permanent tombstones (", "(board tidy)", "tasks tidy)"];
+function isManaged(text) {
+  return MANAGED_MARKERS.some((m) => text.includes(m));
+}
+function commentsIn(src) {
+  const lines = src.split("\n");
+  const fenced = fencedLineFlags(lines);
+  const { blocks } = parseManifestBlocks(src);
+  const liveIds = new Set(blocks.map((b) => b.id));
+  const outside = new Array(lines.length).fill(false);
+  const firstStart = blocks.length ? Math.min(...blocks.map((b) => b.start)) : lines.length;
+  for (let i = 0; i < firstStart; i++) outside[i] = true;
+  for (const b of blocks) {
+    for (let i = coreEnd2(lines, b.start, b.end); i < b.end && i < lines.length; i++) outside[i] = true;
+  }
+  const found = [];
+  for (let i = 0; i < lines.length; i++) {
+    if (!outside[i] || fenced[i]) continue;
+    const text = lines[i];
+    if (!COMMENT_RE.test(text.trim())) continue;
+    const ids = [...new Set(text.match(ID_TOKEN_RE) ?? [])];
+    const live = ids.filter((id) => liveIds.has(id));
+    found.push({
+      line: i + 1,
+      text,
+      ids,
+      liveIds: live,
+      staleIds: ids.length > 0 && live.length === 0,
+      managed: isManaged(text)
+    });
+  }
+  return found;
+}
+function listBoardComments(paths) {
+  return commentsIn(readFileSync9(paths.manifest, "utf8"));
+}
+function planCommentDrop(src, lineNumbers) {
+  if (lineNumbers.length === 0) fail2("name at least one line number to drop");
+  const byLine = new Map(commentsIn(src).map((c) => [c.line, c]));
+  const lines = src.split("\n");
+  const lineCount = src.endsWith("\n") ? lines.length - 1 : lines.length;
+  const wanted = [...new Set(lineNumbers)].sort((a, b) => a - b);
+  const dropped = [];
+  for (const n of wanted) {
+    if (!Number.isInteger(n) || n < 1 || n > lineCount) fail2(`line ${n} is outside the manifest (1-${lineCount}) -- nothing written`);
+    const c = byLine.get(n);
+    if (!c) {
+      fail2(`line ${n} is not a droppable comment (only single-line <!-- ... --> comments outside task blocks and code fences): ${lines[n - 1].slice(0, 120)} -- nothing written`);
+    }
+    if (c.managed) fail2(`line ${n} is a header line the board tools maintain and cannot be dropped: ${c.text.slice(0, 120)} -- nothing written`);
+    dropped.push(c);
+  }
+  const drop = new Set(wanted.map((n) => n - 1));
+  const collapsed = [];
+  let crossedDrop = false;
+  for (let i = 0; i < lines.length; i++) {
+    if (drop.has(i)) {
+      crossedDrop = true;
+      continue;
+    }
+    const l = lines[i];
+    const prevBlank = collapsed.length > 0 && collapsed[collapsed.length - 1].trim() === "";
+    if (crossedDrop && l.trim() === "" && prevBlank) continue;
+    crossedDrop = false;
+    collapsed.push(l);
+  }
+  if (countAllHeaders2(collapsed) !== countAllHeaders2(lines)) fail2("refused -- header-count guard failed, manifest left untouched");
+  const out2 = collapsed.join("\n");
+  if (out2.trim().length === 0) fail2("refused -- the result would be empty, manifest left untouched");
+  return { dropped, out: out2 };
+}
+function dropBoardCommentsLocked(paths, lineNumbers, dry) {
+  const plan = planCommentDrop(readFileSync9(paths.manifest, "utf8"), lineNumbers);
+  if (!dry) writeFileAtomic(paths.manifest, plan.out, "comments");
+  return plan.dropped;
+}
+
 // src/tasks/boardUnlogged.ts
 import { spawnSync } from "node:child_process";
-import { existsSync as existsSync15, readFileSync as readFileSync16 } from "node:fs";
+import { existsSync as existsSync9, readFileSync as readFileSync10 } from "node:fs";
 var DEFAULT_UNLOGGED_WINDOW = "24 hours ago";
 function knownTaskIds(manifest, archive) {
   const ids = /* @__PURE__ */ new Set();
   for (const file of [manifest, archive]) {
-    if (!existsSync15(file)) continue;
-    for (const block of parseManifestBlocks(readFileSync16(file, "utf8"), TASK_ID_RE).blocks) ids.add(block.id);
+    if (!existsSync9(file)) continue;
+    for (const block of parseManifestBlocks(readFileSync10(file, "utf8"), TASK_ID_RE).blocks) ids.add(block.id);
   }
   return ids;
 }
@@ -4143,7 +2676,8 @@ var WRITE_STATUSES = ["done", "todo", "doing", "backlog", "forbidden"];
 var USAGE = `Usage: /cyberine-taskboard:tasks <subcommand> [...]
 
   init [--sync]                            Create a local board or tracked .claude/TASKS.md
-  relocate --to sync|local [--dry]         Move a board and its adjacent history
+  relocate --to sync|local [--dry]         Move a board and its adjacent history (from a hub
+                                            submodule only with --board-wide)
   status [--summary] [--all]             Show the full board or one banner line
   status --json [--all]                  The board as one JSON object (schema board-status/1)
   status <done|todo|doing|backlog|forbidden> <id...> [--evidence <text>]
@@ -4162,16 +2696,19 @@ ${FLEET_USAGE}  status block <id> "<reason>"
   status unblock <id>
   add --title <t> --do <d> --done-when <w> --effort S|M|L [--status todo|backlog] [--created-by <who>]
       [--model <tier>] [--reasoning low|medium|high|xhigh|max] [--exec agent|manual|opencode] [--priority p0|p1|p2]
-      [--area <a>] [--deps <ids>] [--why <w>] [--brief-file <path>]
+      [--area <a>] [--deps <ids>] [--why <w>] [--brief <text> | --brief-file <path|->]
   set <id> [--effort S|M|L] [--reasoning <level>|-] [--model <tier>|-] [--exec agent|manual|opencode] [--priority p0|p1|p2]
-      [--title <text>] [--do <text>] [--done-when <text>] [--why <text>|-] [--reason <text>]
+      [--title <text>] [--do <text>] [--done-when <text>] [--why <text>|-] [--path <repo-relative dir>|-]
+      [--verify "<cmd>"|-] [--reason <text>]   (a task with verify: closes only when <cmd> exits 0)
       (--reason is REQUIRED with --do or --done-when)
   set --batch <json-file|-> --by <model-id>   ({"changes":[{"id","model"?,"reasoning"?,"exec"?,"priority"?,"effort"?}...]})
       All-or-nothing: one bad entry rejects the whole batch, one write, one journal event
   deps show <id>
   deps set <id> "<ids|->"
-  archive [--auto]
-${END_LINES}  reconcile [--dry-run]
+  archive [--auto] [--board-wide]          In a hub submodule, archive/reconcile/end/hygiene --apply/
+                                            status done (no id) touch only its tasks; --board-wide
+                                            (or running from the hub root) restores the whole board
+${END_LINES}  reconcile [--dry-run] [--board-wide]
   doctor
   merge <dup-id> <survivor-id>
   merge --reject <a-id> <b-id>
@@ -4184,8 +2721,11 @@ ${END_LINES}  reconcile [--dry-run]
   brief note <id> "<text>"                  Append a dated entry to the brief's ## Updates
   journal "<title>" [--body <text>] [--id <id>]
   journal --title "<text>"
+  decide <id> --choice "<text>" --rejected "<alternative>" --reason "<why>" [--status auto|owner] [--by <model-or-agent>]
+  decide --revert <ref> --reason "<why>"
+  decide --ack <ref...>|--all
   timeline [<YYYY-MM-DD>] [--grep <pattern>]
-  corpus [--recent N]
+  corpus [--recent N] [--full]             --full adds exec, model, deps, doneWhen and blocker per record
   unlogged [--since <ref|date>] [--json]   Read-only: commits in the window whose message names
                                             no board task id, plus uncommitted paths
                                             (default window: the last 24 hours)
@@ -4193,9 +2733,14 @@ ${END_LINES}  reconcile [--dry-run]
   migrate [--dry]
   save [--schema] [--input <file|->]         Write a decided batch of tasks (JSON), from drafts
                                             or from the conversation; one task by hand is add
+  split <id> --input <file|-> [--dry]       Split owner work out of a task: an explicit decomposition
+                                            (board-split/1) written in one recoverable write; --schema
+                                            prints the input shape
   draft [--to <repo-path>] "<title>" [--do <text>] [--done-when <text>] [--why <text>]
         [--by <model-id>] [--file <path>|--stdin]
   inbox                                     Show the drafts waiting in .local/tasks/drafts/
+  inbox reject <draft-*.md...>|--all --reason "<why>"
+                                            Move drafts to drafts/rejected/ and journal the reason
   guard                                     PreToolUse hook: read a Claude Code tool payload on
                                             stdin, exit 2 when it would WRITE a board file
   banner [--cwd <dir>] [--json]             SessionStart banner: summary + resume line, silent
@@ -4212,12 +2757,17 @@ ${END_LINES}  reconcile [--dry-run]
                                             update lines. --apply runs the mechanical fixes only (tidy,
                                             unambiguous dep repoints, exact-duplicate merges); minting
                                             Owner tasks for buried decisions stays a judgement step
+  comments [--json]                          Read-only: every single-line <!-- --> comment outside
+                                            task blocks, with its line number; stale-ids marks a
+                                            line whose task ids are all off the live board
+  comments drop <line...> [--dry]            Remove those comment lines; refuses any other line
+                                            and the header lines the board tools maintain
   move <id> --before|--after <anchor-id>     Reorder one whole task block; refuses a recurring
                                             block, a [forbidden] block, or either as anchor
 
 Bare \`/cyberine-taskboard:tasks\` (optionally with --all, --summary or --json) is \`/cyberine-taskboard:tasks status\`.
 Ids accept git-style unambiguous prefixes. Validation refusals exit 2.`;
-var SET_USAGE_LINE = "usage: set <id> [--effort|--reasoning|--model|--exec|--priority|--title|--do|--done-when|--why <v>] [--reason <text>] (--reason is required with --do or --done-when)";
+var SET_USAGE_LINE = "usage: set <id> [--effort|--reasoning|--model|--exec|--priority|--title|--do|--done-when|--why|--path|--verify <v>] [--reason <text>] (--reason is required with --do or --done-when)";
 var SELF_HELP_SUBCOMMANDS = /* @__PURE__ */ new Set(["run", "group", "promote", "end", "drop", "forget", "note", "brief", "board", "draft"]);
 function subcommandUsage(sub2) {
   const picked = [];
@@ -4259,15 +2809,35 @@ function positionals(args2, valueFlags) {
   return rest;
 }
 function requireManifest(paths) {
-  if (!existsSync16(paths.manifest)) {
+  if (!existsSync10(paths.manifest)) {
     refuse(`/cyberine-taskboard:tasks: no manifest at ${paths.manifest} -- create the board first`);
   }
 }
-function emitLint(paths) {
-  if (!existsSync16(paths.manifest)) return;
+var UNKNOWN_FIELD_WARNING_RE = /manifest line (\d+): unknown field `([^`]+)` -- /;
+function emitLint(paths, full = false) {
+  if (!existsSync10(paths.manifest)) return;
   const notice = boardFormatNotice(paths.manifest);
   if (notice) warn(notice);
-  for (const w of lintManifest(readFileSync17(paths.manifest, "utf8"))) warn(w);
+  const warnings = lintManifest(readFileSync11(paths.manifest, "utf8"));
+  if (full) {
+    for (const w of warnings) warn(w);
+    return;
+  }
+  const unknown = warnings.map((w) => UNKNOWN_FIELD_WARNING_RE.exec(w)).filter((m) => m !== null);
+  let summarised = false;
+  for (const w of warnings) {
+    if (!UNKNOWN_FIELD_WARNING_RE.test(w)) {
+      warn(w);
+      continue;
+    }
+    if (summarised) continue;
+    summarised = true;
+    const first = unknown[0];
+    const n = unknown.length;
+    warn(
+      `/cyberine-taskboard:tasks: ${n} manifest line${n === 1 ? "" : "s"} ${n === 1 ? "carries" : "carry"} unknown fields (first: line ${first[1]} ${first[2]}); list ${n === 1 ? "it" : "them"} with \`/cyberine-taskboard:tasks doctor\``
+    );
+  }
 }
 function liveIdUniverse(paths) {
   const ids = /* @__PURE__ */ new Set();
@@ -4346,7 +2916,7 @@ function runStatus(paths, args2) {
     }
     let briefFailed = false;
     try {
-      appendAttempt(join10(paths.tasksDir, `${resolved}.md`), reason);
+      appendAttempt(join7(paths.tasksDir, `${resolved}.md`), reason);
     } catch (e) {
       warn(e.message);
       process.exitCode = 1;
@@ -4390,7 +2960,7 @@ function runStatus(paths, args2) {
 usage: status <done|todo|doing|backlog|forbidden> <id...> [--evidence <text> | --fail <reason> | --reason <why> | --path]`
     );
   }
-  const evidence = flagValue(args2, "--evidence");
+  let evidence = flagValue(args2, "--evidence");
   const failReason = flagValue(args2, "--fail");
   const forbidReasonRaw = flagValue(args2, "--reason");
   const stampPath = token === "doing" && hasFlag(args2, "--path");
@@ -4419,7 +2989,8 @@ usage: status <done|todo|doing|backlog|forbidden> <id...> [--evidence <text> | -
   if (hasFlag(args2, "--path") && !stampPath) refuse("/cyberine-taskboard:tasks status: --path is only valid on a `doing` flip");
   if (rawIds.length === 0 && token !== "done") refuse("/cyberine-taskboard:tasks status: at least one <id> is required");
   const universe = liveIdUniverse(paths);
-  const ids = rawIds.length ? rawIds.map((raw) => resolveOrRefuse(raw, universe)) : fold(paths.manifest, paths).filter((t) => t.status === "doing").map((t) => t.id);
+  const noIdScope = rawIds.length ? void 0 : boardScopeFilter(paths, args2);
+  const ids = rawIds.length ? rawIds.map((raw) => resolveOrRefuse(raw, universe)) : fold(paths.manifest, paths).filter((t) => t.status === "doing" && (noIdScope?.keep === void 0 || noIdScope.keep(t.id))).map((t) => t.id);
   if (!ids.length) {
     warn("no [doing] tasks to close.");
     return;
@@ -4428,7 +2999,10 @@ usage: status <done|todo|doing|backlog|forbidden> <id...> [--evidence <text> | -
     for (const id of ids) {
       const duplicate = duplicateTarget(paths.manifest, id);
       if (!duplicate) continue;
-      refuse(duplicate.cycle ? `${id} is duplicate-of ${duplicate.target}, but that chain cycles back on itself -- fix the duplicate-of pointers before closing anything` : `${id} is duplicate-of ${duplicate.target} -- close ${duplicate.target} instead (\`status done ${duplicate.target}\`)`);
+      if (duplicate.cycle) refuse(`${id} is duplicate-of ${duplicate.target}, but that chain cycles back on itself -- fix the duplicate-of pointers before closing anything`);
+      const survivor = fold(paths.manifest, paths).find((t) => t.id === duplicate.target);
+      const targetDone = !survivor || survivor.status === "done";
+      refuse(targetDone ? `${id} is duplicate-of ${duplicate.target}, which is already done or archived -- drop the duplicate instead (\`drop ${id}\`)` : `${id} is duplicate-of ${duplicate.target} -- close ${duplicate.target} instead (\`status done ${duplicate.target}\`)`);
     }
   }
   if (token === "doing" || token === "done") {
@@ -4437,6 +3011,21 @@ usage: status <done|todo|doing|backlog|forbidden> <id...> [--evidence <text> | -
       const refusal2 = leaseRefusal(paths, id, caller);
       if (refusal2) refuse(refusal2);
     }
+  }
+  if (token === "done") {
+    const verified = [];
+    const failed = [];
+    for (const id of ids) {
+      const outcome = runTaskVerify(paths.root, paths.manifest, id);
+      if (outcome === null) continue;
+      if (outcome.passed) verified.push(`${id} verify ${outcome.detail}`);
+      else failed.push(`${id}: ${outcome.detail}`);
+    }
+    if (failed.length) {
+      refuse(`/cyberine-taskboard:tasks status done: refused, nothing written -- a task with a verify: command closes only when it exits 0:
+${failed.map((f) => `  ${f}`).join("\n")}`);
+    }
+    if (verified.length) evidence = [evidence, ...verified].filter((e) => e !== void 0 && e.trim() !== "").join("; ");
   }
   const extra = evidence !== void 0 ? `evidence:${evidence.replace(/\s+/g, " ").trim()}` : failReason !== void 0 ? `fail:${failReason.replace(/\s+/g, " ").trim()}` : void 0;
   for (const id of ids) {
@@ -4548,7 +3137,7 @@ function runRecurring(paths, args2) {
 
 ${RECURRING_EDIT_USAGE}`);
 }
-function runAdd(paths, args2) {
+async function runAdd(paths, args2) {
   const VALUE_FLAGS = [
     "--title",
     "--do",
@@ -4561,6 +3150,7 @@ function runAdd(paths, args2) {
     "--area",
     "--deps",
     "--why",
+    "--brief",
     "--brief-file",
     "--status",
     "--created-by"
@@ -4570,6 +3160,7 @@ function runAdd(paths, args2) {
   const doneWhen = flagValue(args2, "--done-when");
   const effort = flagValue(args2, "--effort");
   const briefFile = flagValue(args2, "--brief-file");
+  const briefText = flagValue(args2, "--brief");
   if (!title || !title.trim()) refuse("/cyberine-taskboard:tasks add: --title is required and non-empty");
   if (!doText || !doText.trim()) refuse("/cyberine-taskboard:tasks add: --do is required and non-empty");
   if (!doneWhen || !doneWhen.trim()) refuse("/cyberine-taskboard:tasks add: --done-when is required and non-empty");
@@ -4589,11 +3180,18 @@ function runAdd(paths, args2) {
   }
   refuseIfPromoting(status, "/cyberine-taskboard:tasks add --status (default todo)");
   const createdBy = flagValue(args2, "--created-by");
+  if (briefText !== void 0 && briefFile !== void 0) refuse("/cyberine-taskboard:tasks add: give --brief <text> or --brief-file <path|->, not both");
   let briefBody;
-  if (briefFile) {
-    if (!existsSync16(briefFile)) refuse(`/cyberine-taskboard:tasks add: --brief-file not found: ${briefFile}`);
-    briefBody = readFileSync17(briefFile, "utf8");
+  if (briefText !== void 0) {
+    briefBody = briefText.endsWith("\n") ? briefText : `${briefText}
+`;
+  } else if (briefFile === "-") {
+    briefBody = await readStdin();
+  } else if (briefFile) {
+    if (!existsSync10(briefFile)) refuse(`/cyberine-taskboard:tasks add: --brief-file not found: ${briefFile}`);
+    briefBody = readFileSync11(briefFile, "utf8");
   }
+  if (briefBody !== void 0 && briefBody.trim() === "") refuse(`/cyberine-taskboard:tasks add: ${briefText !== void 0 ? "--brief" : "--brief-file"} is empty`);
   const decision = {
     ref: "a",
     title,
@@ -4617,7 +3215,12 @@ function runAdd(paths, args2) {
     const result = convergeApply(paths, [decision], applyOut, warn, false);
     const createdId = result.created[0]?.id;
     if (createdId !== void 0) {
-      for (const issue of taskQualityIssues({ do: doText, effort, hasBrief: briefBody !== void 0 })) {
+      for (const issue of missingBriefIssues({ effort, hasBrief: briefBody !== void 0 })) {
+        warn(`/cyberine-taskboard:tasks add: warning: ${createdId}: ${issue}`);
+      }
+      const { blocks } = parseManifestBlocks(readFileSync11(paths.manifest, "utf8"), TASK_ID_RE);
+      const block = blocks.find((b) => b.id === createdId);
+      for (const issue of (block ? ownerMixForBlock(block, { blocks })?.issues : void 0) ?? []) {
         warn(`/cyberine-taskboard:tasks add: warning: ${createdId}: ${issue}`);
       }
     }
@@ -4625,8 +3228,8 @@ function runAdd(paths, args2) {
     const created = result.created[0];
     if (!created) return;
     mkdirSync3(paths.tasksDir, { recursive: true });
-    const path = join10(paths.tasksDir, `${created.id}.md`);
-    if (existsSync16(path) || existsSync16(join10(paths.tasksDir, "archive", `${created.id}.md`))) return;
+    const path = join7(paths.tasksDir, `${created.id}.md`);
+    if (existsSync10(path) || existsSync10(join7(paths.tasksDir, "archive", `${created.id}.md`))) return;
     writeFileSync2(path, briefBody);
     out(`brief written:
   ${path}`);
@@ -4642,7 +3245,9 @@ var SET_FLAGS = /* @__PURE__ */ new Set([
   "--do",
   "--done-when",
   "--why",
-  "--reason"
+  "--reason",
+  "--path",
+  "--verify"
 ]);
 var BATCH_SET_USAGE = `usage: /cyberine-taskboard:tasks set --batch <json-file|-> --by <model-id>
 
@@ -4673,10 +3278,10 @@ ${BATCH_SET_USAGE}`);
   if (!by.trim()) refuse(`/cyberine-taskboard:tasks set --batch: --by <model-id> is required
 
 ${BATCH_SET_USAGE}`);
-  if (inputPath !== "-" && !existsSync16(inputPath)) {
+  if (inputPath !== "-" && !existsSync10(inputPath)) {
     refuse(`/cyberine-taskboard:tasks set --batch: no such file: ${inputPath}`);
   }
-  const raw = inputPath === "-" ? await readStdin() : readFileSync17(inputPath, "utf8");
+  const raw = inputPath === "-" ? await readStdin() : readFileSync11(inputPath, "utf8");
   let parsed;
   try {
     parsed = JSON.parse(raw);
@@ -4721,6 +3326,9 @@ async function runSet(paths, args2) {
   const doneWhen = flagValue(args2, "--done-when");
   const why = flagValue(args2, "--why");
   const reason = flagValue(args2, "--reason");
+  const pathValue = flagValue(args2, "--path");
+  const verify = flagValue(args2, "--verify");
+  if (verify !== void 0) changes.verify = verify;
   if (effort !== void 0) changes.effort = effort;
   if (reasoning !== void 0) changes.reasoning = reasoning;
   if (model !== void 0) changes.model = model;
@@ -4730,8 +3338,9 @@ async function runSet(paths, args2) {
   if (doText !== void 0) changes.do = doText;
   if (doneWhen !== void 0) changes.doneWhen = doneWhen;
   if (why !== void 0) changes.why = why;
+  if (pathValue !== void 0) changes.path = pathValue;
   if (Object.keys(changes).length === 0) {
-    refuse("/cyberine-taskboard:tasks set: at least one of --effort/--reasoning/--model/--exec/--priority/--title/--do/--done-when/--why is required");
+    refuse("/cyberine-taskboard:tasks set: at least one of --effort/--reasoning/--model/--exec/--priority/--title/--do/--done-when/--why/--path/--verify is required");
   }
   out(withLock(paths, () => setFields(paths, id, changes, reason)));
 }
@@ -4751,16 +3360,34 @@ function runDeps(paths, args2) {
   }
   refuse("/cyberine-taskboard:tasks deps: usage: deps <show|set> <id> [ids|-]");
 }
+function boardScopeFilter(paths, args2) {
+  const scope = hasFlag(args2, "--board-wide") ? "" : submoduleScope(process.cwd());
+  if (!scope) return { scope: "", leftDone: () => 0 };
+  const pathOf = /* @__PURE__ */ new Map();
+  for (const file of [paths.archive, paths.manifest]) {
+    if (!existsSync10(file)) continue;
+    for (const b of parseManifestBlocks(readFileSync11(file, "utf8"), TASK_ID_RE).blocks) pathOf.set(b.id, b.fields.get("path")?.trim() ?? "");
+  }
+  const keep = (id) => pathInScope(pathOf.get(id), scope);
+  const leftDone = () => fold(paths.manifest, paths).filter((t) => t.status === "done" && !keep(t.id)).length;
+  return { scope, keep, leftDone };
+}
+function scopeHousekeeping(scope, left, cmd) {
+  if (!scope) return;
+  out(`scoped to submodule ${scope}/: only its tasks were touched${left ? `; ${left} done task(s) elsewhere on the hub board were left for the hub (run ${cmd} from the hub root, or add --board-wide)` : ""}.`);
+}
 function runArchive(paths, args2) {
   const auto = hasFlag(args2, "--auto");
-  const unknown = args2.filter((a) => a.startsWith("-") && a !== "--auto");
+  const unknown = args2.filter((a) => a.startsWith("-") && a !== "--auto" && a !== "--board-wide");
   if (unknown.length) refuse(`/cyberine-taskboard:tasks archive: unknown flag(s): ${unknown.join(" ")} -- nothing archived`);
+  const scoped = boardScopeFilter(paths, args2);
   if (!lockAndMigrate(paths.lock, paths.manifest)) {
     warn("/cyberine-taskboard:tasks: reconcile lock busy, aborting (nothing written)");
     process.exit(1);
   }
   try {
-    if (archiveLocked(paths, { auto }, out).length) process.exitCode = 1;
+    if (archiveLocked(paths, { auto, ...scoped.keep ? { keep: scoped.keep } : {} }, out).length) process.exitCode = 1;
+    scopeHousekeeping(scoped.scope, scoped.leftDone(), "/cyberine-taskboard:tasks archive");
   } catch (e) {
     warn(e.message);
     out(archiveAbortLabel(e, "archive"));
@@ -4777,7 +3404,7 @@ function runEnd(paths, args2) {
       out(END_USAGE);
       return;
     }
-    if (a === "--force") continue;
+    if (a === "--force" || a === "--board-wide") continue;
     const consumed = consumeEndHandoffArg(handoff, args2, i);
     if (consumed >= 0) {
       i = consumed;
@@ -4793,11 +3420,13 @@ ${END_USAGE}`);
   const pendingDrafts = draftNames(paths.draftsDir);
   if (pendingDrafts.length > 0 && !force) {
     out(`/cyberine-taskboard:tasks end: ${pendingDrafts.length} draft(s) pending in .local/tasks/drafts/ -- add them to the board first (/cyberine-taskboard:tasks inbox, then /cyberine-taskboard:tasks save), then re-run end.`);
-    out("     (or: /cyberine-taskboard:tasks end --force to wrap anyway and leave them in the inbox for later)");
+    out('     (or: /cyberine-taskboard:tasks inbox reject <draft>|--all --reason "<why>" to discard them,');
+    out("      or: /cyberine-taskboard:tasks end --force to wrap anyway and leave them in the inbox for later)");
     process.exitCode = 2;
     return;
   }
-  const doing = fold(paths.manifest, paths).filter((t) => t.status === "doing");
+  const scoped = boardScopeFilter(paths, args2);
+  const doing = fold(paths.manifest, paths).filter((t) => t.status === "doing" && (scoped.keep === void 0 || scoped.keep(t.id)));
   if (doing.length) {
     out("/cyberine-taskboard:tasks end: still [doing] at session end -- flip each to done/todo, then re-run end:");
     for (const t of doing) out(`  ${t.id}  ${t.title}`);
@@ -4809,8 +3438,9 @@ ${END_USAGE}`);
     boardLabel = archiveAbortLabel(null, "end");
   } else {
     try {
-      if (archiveLocked(paths, { auto: false }, out).length) process.exitCode = 1;
+      if (archiveLocked(paths, { auto: false, ...scoped.keep ? { keep: scoped.keep } : {} }, out).length) process.exitCode = 1;
       addStaleHeaderNoteLocked(paths.manifest);
+      scopeHousekeeping(scoped.scope, scoped.leftDone(), "/cyberine-taskboard:tasks end");
     } catch (e) {
       warn(e.message);
       process.exitCode = 1;
@@ -4829,7 +3459,12 @@ ${END_USAGE}`);
   }
   if (handoffSeed !== null) {
     out("");
-    finishEndHandoff(handoff, handoffSeed);
+    const decisions = unreviewedDecisions(paths, submoduleScope(process.cwd()));
+    const seed = decisions.length ? `${handoffSeed.trimEnd()}
+Open: ${decisions.length} unreviewed decisions (report them, then /cyberine-taskboard:tasks decide --ack <ref...>)
+${unreviewedDecisionLines(decisions).map((line) => `- ${line}`).join("\n")}
+` : handoffSeed;
+    finishEndHandoff(handoff, seed);
   }
 }
 function runTidy(paths, args2) {
@@ -4857,8 +3492,8 @@ function runTidy(paths, args2) {
   if (!result.changed) out("tidy: manifest already clean (mechanical part).");
 }
 function runHygiene(paths, args2) {
-  const unknown = args2.filter((a) => a !== "--apply" && a !== "--json");
-  if (unknown.length) refuse(`/cyberine-taskboard:tasks hygiene: unknown argument(s): ${unknown.join(" ")} -- usage: hygiene [--apply] [--json]`);
+  const unknown = args2.filter((a) => a !== "--apply" && a !== "--json" && a !== "--board-wide");
+  if (unknown.length) refuse(`/cyberine-taskboard:tasks hygiene: unknown argument(s): ${unknown.join(" ")} -- usage: hygiene [--apply] [--json] [--board-wide]`);
   const apply = hasFlag(args2, "--apply");
   const json = hasFlag(args2, "--json");
   if (!apply) {
@@ -4869,7 +3504,9 @@ function runHygiene(paths, args2) {
   }
   let result;
   try {
-    result = applyHygiene(paths);
+    const scoped = boardScopeFilter(paths, args2);
+    result = applyHygiene(paths, scoped.keep);
+    if (scoped.scope && !json) out(`scoped to submodule ${scoped.scope}/: dep repoints and merges touch only its tasks; tidy's reformatting stays board-wide.`);
   } catch (e) {
     refuse(e.message);
   }
@@ -4883,6 +3520,52 @@ function runHygiene(paths, args2) {
   out("");
   out("What is left after the mechanical fixes:");
   for (const line of formatHygiene(result.after, "after")) out(line);
+}
+function runComments(paths, args2) {
+  if (args2[0] === "drop") {
+    const rest = args2.slice(1);
+    const dry = hasFlag(rest, "--dry");
+    const nums = rest.filter((a) => a !== "--dry");
+    const bad = nums.filter((a) => !/^[0-9]+$/.test(a));
+    if (bad.length || nums.length === 0) {
+      refuse(`/cyberine-taskboard:tasks comments: usage: comments drop <line...> [--dry]${bad.length ? ` -- not a line number: ${bad.join(" ")}` : ""}`);
+    }
+    if (!lockAndMigrate(paths.lock, paths.manifest)) {
+      refuse("/cyberine-taskboard:tasks comments: board lock busy, aborting (nothing written)");
+    }
+    let dropped;
+    try {
+      dropped = dropBoardCommentsLocked(paths, nums.map(Number), dry);
+    } catch (e) {
+      if (e instanceof CommentsRejected) refuse(e.message);
+      throw e;
+    } finally {
+      unlock(paths.lock);
+    }
+    out(`comments: ${dry ? "dry run, would drop" : "dropped"} ${dropped.length} line(s)${dry ? " -- nothing written" : ""}`);
+    for (const c of dropped) out(`  ${c.line}: ${c.text}`);
+    return;
+  }
+  const unknown = args2.filter((a) => a !== "--json");
+  if (unknown.length) refuse(`/cyberine-taskboard:tasks comments: unknown argument(s): ${unknown.join(" ")} -- usage: comments [--json] | comments drop <line...> [--dry]`);
+  const comments = listBoardComments(paths);
+  if (hasFlag(args2, "--json")) {
+    out(JSON.stringify({ schema: "board-comments/1", manifest: paths.manifest, comments }));
+    return;
+  }
+  if (comments.length === 0) {
+    out("comments: no comment lines outside task blocks");
+    return;
+  }
+  const width = String(comments[comments.length - 1].line).length;
+  for (const c of comments) {
+    const tag = c.managed ? "managed  " : c.staleIds ? "stale-ids" : "         ";
+    out(`${String(c.line).padStart(width)}  ${tag}  ${c.text}`);
+  }
+  const stale = comments.filter((c) => c.staleIds && !c.managed).length;
+  out("");
+  out(`comments: ${comments.length} line(s), ${stale} stale-ids (a hint, not a verdict: read the lines around it first)`);
+  out("  drop with: /cyberine-taskboard:tasks comments drop <line...> --dry, then the same without --dry");
 }
 function runMove(paths, args2) {
   const [moveId, ...rest] = args2;
@@ -4924,7 +3607,7 @@ function runReconcile(paths, args2) {
       process.exitCode = 1;
       return;
     }
-    const src = readFileSync17(paths.manifest, "utf8");
+    const src = readFileSync11(paths.manifest, "utf8");
     out(`  ${plan.out === src ? "no" : "some"} manifest bytes would change`);
     out(`  ${plan.overlay.size} id(s) in the folded overlay${changedIds.length ? `: ${changedIds.join(", ")}` : ""}`);
     if (plan.evidence.size) out(`  ${plan.evidence.size} evidence field(s) would be baked`);
@@ -4933,10 +3616,14 @@ function runReconcile(paths, args2) {
     out("  nothing was written");
     return;
   }
-  if (reconcile(paths)) out(`reconciled overlay -> ${paths.manifest}`);
-  else process.exitCode = 1;
+  const scoped = boardScopeFilter(paths, args2);
+  if (reconcile(paths, scoped.keep)) {
+    out(`reconciled overlay -> ${paths.manifest}`);
+    if (scoped.scope) out(`scoped to submodule ${scoped.scope}/: flips for tasks elsewhere on the hub board stay pending (run reconcile from the hub root, or add --board-wide).`);
+  } else process.exitCode = 1;
 }
 function runDoctor(paths) {
+  emitLint(paths, true);
   const report = analyze(gatherDoctorInputs(paths));
   out(formatReport(report));
   const manifests = existingManifests(paths.root);
@@ -4945,7 +3632,13 @@ function runDoctor(paths) {
 10) Multiple manifests -- ${manifests[0]} hides ${manifests.slice(1).join(", ")}`);
     out("  Resolve the competing boards before making further board changes.");
   }
-  if (hasBlockingFindings(report) || manifests.length > 1) process.exitCode = 1;
+  const identity = boardIdentityProblem(paths.root, paths.manifest);
+  if (identity !== null) out(`
+11) Board identity -- ${identity}`);
+  const hub = shadowedHubBoard(paths.root);
+  if (hub !== null) out(`
+12) Shadowed hub board -- ${paths.manifest} shadows ${hub}; this submodule reads and writes its own board, not the hub's.`);
+  if (hasBlockingFindings(report) || manifests.length > 1 || identity !== null) process.exitCode = 1;
 }
 function runMerge(paths, args2) {
   if (args2[0] === "--reject") {
@@ -5118,6 +3811,52 @@ creating the section above the first heading when absent:
 Entries append oldest-first. The six brief sections are never rewritten.
 Records the same text as a journal note attached to <id>. Refuses a task that
 has no brief (use \`note <id>\` for the manifest block instead).`;
+var INBOX_REJECT_USAGE = `usage: /cyberine-taskboard:tasks inbox reject <draft-*.md...> --reason "<why>"
+       /cyberine-taskboard:tasks inbox reject --all --reason "<why>"
+
+Moves each named pending draft (a bare basename from /cyberine-taskboard:tasks inbox), or every pending
+draft with --all, into .local/tasks/drafts/rejected/ and records one journal note per draft
+with the reason. --reason is required. Nothing moves when any name is unknown or already
+rejected. Move a file back into drafts/ to restore it.`;
+function runInboxReject(paths, args2) {
+  if (args2.includes("-h") || args2.includes("--help")) {
+    out(INBOX_REJECT_USAGE);
+    return;
+  }
+  const reason = flagValue(args2, "--reason");
+  const all = args2.includes("--all");
+  const names = [];
+  for (let i = 0; i < args2.length; i++) {
+    const a = args2[i];
+    if (a === "--reason") i++;
+    else if (a.startsWith("--reason=") || a === "--all") continue;
+    else if (a.startsWith("-")) refuse(`/cyberine-taskboard:tasks inbox reject: unknown flag ${a}
+
+${INBOX_REJECT_USAGE}`);
+    else names.push(a);
+  }
+  if (reason === void 0 || reason.trim() === "") refuse(`/cyberine-taskboard:tasks inbox reject: --reason "<why>" is required
+
+${INBOX_REJECT_USAGE}`);
+  if (all && names.length) refuse("/cyberine-taskboard:tasks inbox reject: give draft names or --all, not both");
+  const targets = all ? draftNames(paths.draftsDir) : [...new Set(names)];
+  if (targets.length === 0) refuse(all ? "/cyberine-taskboard:tasks inbox reject: no pending drafts" : `/cyberine-taskboard:tasks inbox reject: name at least one draft, or --all
+
+${INBOX_REJECT_USAGE}`);
+  const errors = rejectDraftErrors(paths.draftsDir, targets);
+  if (errors.length) refuse(`/cyberine-taskboard:tasks inbox reject: nothing moved:
+${errors.map((e) => `  - ${e}`).join("\n")}`);
+  const moved = rejectDrafts(paths.draftsDir, targets);
+  const ts = epochToLocalIso(Math.floor(Date.now() / 1e3));
+  try {
+    appendJournalEvents(paths, moved.map((name) => ({ ts, kind: "note", title: `rejected draft ${name}: ${reason.trim()}`, by: agentTag() })));
+  } catch (e) {
+    warn(`inbox reject: moved, but the journal append FAILED -- ${e.message}`);
+    process.exitCode = 1;
+  }
+  out(`rejected ${moved.length} draft(s) into ${join7(paths.draftsDir, "rejected")}:`);
+  for (const name of moved) out(`  ${name}`);
+}
 function journalNoteEvent(paths, id, title, cmd) {
   try {
     appendJournalEvents(paths, [
@@ -5157,11 +3896,104 @@ ${BRIEF_NOTE_USAGE}`);
   const parsed = parseIdAndText(rest, "brief note", BRIEF_NOTE_USAGE);
   const id = withLock(paths, () => {
     const resolvedId = resolveLiveTaskId(paths, parsed.rawId, "brief note");
-    addBriefUpdate(join10(paths.tasksDir, `${resolvedId}.md`), parsed.text);
+    addBriefUpdate(join7(paths.tasksDir, `${resolvedId}.md`), parsed.text);
     return resolvedId;
   });
   out(`${id}: brief updated (${UPDATES_HEADING})`);
   journalNoteEvent(paths, id, `brief note ${id}: ${parsed.text}`, "brief note");
+}
+function runDecide(paths, args2) {
+  const values = /* @__PURE__ */ new Map();
+  const positional = [];
+  let ack = false;
+  let all = false;
+  const valueFlags = /* @__PURE__ */ new Set(["--choice", "--rejected", "--reason", "--status", "--by", "--revert"]);
+  for (let i = 0; i < args2.length; i++) {
+    const arg = args2[i];
+    if (arg === "--ack" || arg === "--all") {
+      if (arg === "--ack" && ack || arg === "--all" && all) refuse(`/cyberine-taskboard:tasks decide: duplicate flag: ${arg}`);
+      if (arg === "--ack") ack = true;
+      else all = true;
+    } else if (valueFlags.has(arg)) {
+      if (values.has(arg)) refuse(`/cyberine-taskboard:tasks decide: duplicate flag: ${arg}`);
+      const value = args2[++i];
+      if (!value?.trim() || value.startsWith("--")) refuse(`/cyberine-taskboard:tasks decide: ${arg} requires a non-empty value`);
+      values.set(arg, value);
+    } else if (arg.startsWith("-")) refuse(`/cyberine-taskboard:tasks decide: unknown flag: ${arg}`);
+    else positional.push(arg);
+  }
+  const revert = values.get("--revert");
+  if (ack) {
+    if (values.size || all && positional.length) refuse("/cyberine-taskboard:tasks decide: usage: decide --ack <ref...>|--all");
+    if (!all && (!positional.length || positional.some((ref) => !ref.trim()))) refuse("/cyberine-taskboard:tasks decide: --ack requires <ref...> or --all");
+  } else if (revert !== void 0) {
+    if (all || positional.length || values.size !== 2 || !values.has("--reason")) refuse('/cyberine-taskboard:tasks decide: usage: decide --revert <ref> --reason "<why>"');
+  } else {
+    if (all || positional.length !== 1 || !TASK_ID_RE.test(positional[0])) refuse("/cyberine-taskboard:tasks decide: a valid task id is required");
+    for (const flag of ["--choice", "--rejected", "--reason"]) {
+      if (!values.has(flag)) refuse(`/cyberine-taskboard:tasks decide: ${flag} requires a non-empty value`);
+    }
+    const status = values.get("--status") ?? "auto";
+    if (status !== "auto" && status !== "owner") refuse("/cyberine-taskboard:tasks decide: --status must be auto or owner");
+  }
+  assertBoardWritable(paths.manifest);
+  if (!lock(paths.lock)) {
+    process.exitCode = 1;
+    return;
+  }
+  let written;
+  try {
+    const events = readJournalEvents(paths);
+    const by = values.get("--by") ?? agentTag();
+    const ts = nextDecisionTimestamp(events, by);
+    const findDecided = (ref) => events.find((ev) => ev.kind === "decided" && journalEventRef(ev) === ref);
+    if (ack && !all) {
+      const refs = [...new Set(positional)];
+      const unknown = refs.filter((ref) => !findDecided(ref));
+      if (unknown.length) throw new BoardRejected(`/cyberine-taskboard:tasks decide: no decided event matches ref: ${unknown.join(", ")}`);
+      written = refs.map((ref) => ({ ts, kind: "ack", by, ref }));
+    } else if (ack && submoduleScope(process.cwd())) {
+      const scope = submoduleScope(process.cwd());
+      const refs = unreviewedDecisions(paths, scope).map((d) => d.ref);
+      if (refs.length === 0) throw new BoardRejected(`/cyberine-taskboard:tasks decide: no unreviewed decision on a task in scope ${scope}/ -- nothing to ack (run from the hub root to ack the whole board)`);
+      out(`acking ${refs.length} decision(s) on tasks in scope ${scope}/; decisions elsewhere on the hub board stay unreviewed`);
+      written = refs.map((ref) => ({ ts, kind: "ack", by, ref }));
+    } else if (ack) {
+      written = [{ ts, kind: "ack", by, all: true }];
+    } else if (revert !== void 0) {
+      const referenced = findDecided(revert);
+      if (!referenced) throw new BoardRejected(`/cyberine-taskboard:tasks decide: no decided event matches ref: ${revert}`);
+      written = [{
+        ts,
+        kind: "decided",
+        by,
+        status: "reverted",
+        ref: revert,
+        id: referenced.id,
+        title: referenced.title,
+        choice: referenced.choice,
+        reason: values.get("--reason")
+      }];
+    } else {
+      const id = positional[0];
+      const title = parseManifestBlocks(readFileSync11(paths.manifest, "utf8"), TASK_ID_RE).blocks.find((block) => block.id === id)?.title;
+      written = [{
+        ts,
+        kind: "decided",
+        id,
+        ...title !== void 0 && { title },
+        by,
+        choice: values.get("--choice"),
+        rejected: values.get("--rejected"),
+        reason: values.get("--reason"),
+        status: values.get("--status") ?? "auto"
+      }];
+    }
+    appendJournalEvents(paths, written);
+  } finally {
+    unlock(paths.lock);
+  }
+  out(ack && !all ? `acked ${written.length} decision(s): ${written.map((ev) => ev.ref).join(", ")}` : journalEventRef(written[0]));
 }
 function runJournal(paths, args2) {
   let title = "";
@@ -5218,7 +4050,17 @@ function runTimeline(paths, args2) {
     for (const month of [...byMonth.keys()].sort().reverse()) {
       out(month);
       for (const day of byMonth.get(month).sort().reverse()) {
-        out(`  ${day.slice(5)}  ${deriveDayTitle(readJournalDayFolded(paths, day))}`);
+        const events2 = readJournalDayFolded(paths, day);
+        out(`  ${day.slice(5)}  ${deriveDayTitle(events2)}`);
+        for (const ev of events2) {
+          if (ev.kind === "ack") out(`    ${localTime(ev.ts)} ack ${ev.all ? "all decisions at or before this timestamp" : ev.ref ?? ""} (${journalEventRef(ev)})`);
+          if (ev.kind !== "decided" || ev.status === void 0) continue;
+          out(`    ${localTime(ev.ts)} ${ev.id ?? "-"} [${ev.status}] (${journalEventRef(ev)})`);
+          if (ev.choice !== void 0) out(`      choice: ${ev.choice}`);
+          if (ev.rejected !== void 0) out(`      rejected: ${ev.rejected}`);
+          if (ev.reason !== void 0) out(`      reason: ${ev.reason}`);
+          if (ev.ref !== void 0) out(`      ref: ${ev.ref}`);
+        }
       }
     }
     return;
@@ -5244,6 +4086,8 @@ function runTimeline(paths, args2) {
         if (ev.body !== void 0) lines.push(...ev.body.split("\n"));
         if (ev.v !== void 0) lines.push(ev.v);
         if (ev.evidence !== void 0) lines.push(ev.evidence);
+        for (const value of [ev.choice, ev.rejected, ev.reason, ev.status, ev.ref]) if (value !== void 0) lines.push(value);
+        if (ev.kind === "ack") lines.push(ev.all ? "ack all decisions" : `ack ${ev.ref ?? ""}`);
         const hit = lines.find((line) => re.test(line));
         if (hit !== void 0) out(`${day}  ${ev.kind}  ${ev.id ?? "-"}  ${hit}`);
       }
@@ -5269,9 +4113,17 @@ function runTimeline(paths, args2) {
       out(ev.evidence ? `${line}  -- evidence: ${ev.evidence}` : line);
     }
   }
-  for (const ev of events.filter((e) => e.kind === "decided")) {
+  for (const ev of events.filter((e) => e.kind === "decided" || e.kind === "ack")) {
     out("");
-    out(`### ${ev.id} -- ${ev.title ?? ""}`);
+    if (ev.kind === "ack") {
+      out(`${localTime(ev.ts)}  ack ${ev.all ? "all decisions at or before this timestamp" : ev.ref ?? ""} (${journalEventRef(ev)})`);
+      continue;
+    }
+    out(`### ${ev.id} -- ${ev.title ?? ""}${ev.status ? ` [${ev.status}] (${journalEventRef(ev)})` : ""}`);
+    if (ev.choice !== void 0) out(`choice: ${ev.choice}`);
+    if (ev.rejected !== void 0) out(`rejected: ${ev.rejected}`);
+    if (ev.reason !== void 0) out(`reason: ${ev.reason}`);
+    if (ev.ref !== void 0) out(`ref: ${ev.ref}`);
     if (ev.body) out(ev.body);
   }
   for (const ev of events.filter((e) => e.kind === "note")) {
@@ -5314,7 +4166,8 @@ function runCorpus(paths, args2) {
     }
     recent = n;
   }
-  const manifestSrc = readFileSync17(paths.manifest, "utf8");
+  const full = args2.includes("--full");
+  const manifestSrc = readFileSync11(paths.manifest, "utf8");
   const parsed = parseManifestBlocks(manifestSrc, TASK_ID_RE);
   for (const w of parsed.warnings) warn(w);
   const effective = new Map(fold(paths.manifest, paths).map((t) => [t.id, t.status]));
@@ -5322,6 +4175,11 @@ function runCorpus(paths, args2) {
     const area = (b.fields.get("area") ?? "").trim();
     const why = b.fields.get("why")?.trim();
     const effort = b.fields.get("effort")?.trim();
+    const fullFields = () => {
+      const text = (name) => b.fields.get(name)?.trim() || null;
+      const deps = (b.fields.get("deps") ?? "").split(/[,\s]+/).filter((d) => d && d !== "-");
+      return { exec: text("exec"), model: text("model"), deps, doneWhen: text("done-when"), blocker: text("blocker") };
+    };
     return {
       id: b.id,
       status: statusOverride ?? b.status ?? "",
@@ -5331,11 +4189,12 @@ function runCorpus(paths, args2) {
       effort: effort ? effort : null,
       area: area ? area.split(/\s+/) : [],
       path: b.fields.get("path") ?? null,
-      source
+      source,
+      ...full ? fullFields() : {}
     };
   };
   for (const b of parsed.blocks) out(JSON.stringify(toRecord(b, "manifest", effective.get(b.id))));
-  const archiveBlocks = existsSync16(paths.archive) ? parseManifestBlocks(readFileSync17(paths.archive, "utf8"), TASK_ID_RE).blocks : [];
+  const archiveBlocks = existsSync10(paths.archive) ? parseManifestBlocks(readFileSync11(paths.archive, "utf8"), TASK_ID_RE).blocks : [];
   const shown = recent >= archiveBlocks.length ? archiveBlocks : archiveBlocks.slice(archiveBlocks.length - recent);
   if (archiveBlocks.length > 0) {
     out(JSON.stringify({ meta: true, source: "archive", shown: shown.length, total: archiveBlocks.length, recent }));
@@ -5409,7 +4268,7 @@ ${BOARD_USAGE}`);
     out(JSON.stringify(data));
     return;
   }
-  const target = outFile ?? join10(paths.root, ".local", "tasks", "board.html");
+  const target = outFile ?? join7(paths.root, ".local", "tasks", "board.html");
   mkdirSync3(dirname5(target), { recursive: true });
   writeFileSync2(target, renderBoardHtml(data));
   const counts = data.tasks.reduce((acc, t) => {
@@ -5428,7 +4287,7 @@ function runMigrate(paths, args2) {
   const unknown = args2.filter((a) => !KNOWN.has(a));
   if (unknown.length) refuse(`/cyberine-taskboard:tasks migrate: unknown argument(s): ${unknown.join(" ")} -- usage: migrate [--dry]`);
   const dry = args2.some((a) => KNOWN.has(a));
-  const src = readFileSync17(paths.manifest, "utf8");
+  const src = readFileSync11(paths.manifest, "utf8");
   const strict = parseManifestBlocks(src);
   if (strict.blocks.length > 0 && !strict.legacy) {
     out(
@@ -5476,6 +4335,33 @@ function runMigrate(paths, args2) {
     unlock(paths.lock);
   }
 }
+async function runSplit(paths, args2) {
+  if (hasFlag(args2, "--schema")) {
+    out(SPLIT_SCHEMA_TEXT);
+    return;
+  }
+  const id = positionals(args2, ["--input"])[0];
+  if (!id) refuse("/cyberine-taskboard:tasks split: usage: split <id> --input <file|-> [--dry]");
+  const inputPath = flagValue(args2, "--input");
+  if (inputPath === void 0) refuse("/cyberine-taskboard:tasks split: --input <file|-> is required -- see split --schema");
+  let raw;
+  if (inputPath !== "-") {
+    if (!existsSync10(inputPath)) refuse(`/cyberine-taskboard:tasks split: no such input file: ${inputPath}`);
+    raw = readFileSync11(inputPath, "utf8");
+  } else {
+    raw = await readStdin();
+  }
+  let parsed;
+  try {
+    parsed = JSON.parse(raw);
+  } catch (e) {
+    refuse(`/cyberine-taskboard:tasks split: invalid JSON -- ${e.message}`);
+  }
+  const input = parseSplitInput(parsed);
+  const resolved = resolveIdPrefix(id, new Set(parseManifestBlocks(readFileSync11(paths.manifest, "utf8"), TASK_ID_RE).blocks.map((b) => b.id))) ?? id;
+  const result = withLock(paths, () => splitTask(paths, resolved, input, { dry: hasFlag(args2, "--dry") }));
+  for (const line of result.lines) out(line);
+}
 async function runConvergeApply(paths, args2) {
   if (hasFlag(args2, "--schema")) {
     out(SCHEMA_TEXT);
@@ -5484,8 +4370,8 @@ async function runConvergeApply(paths, args2) {
   const inputPath = flagValue(args2, "--input");
   let raw;
   if (inputPath && inputPath !== "-") {
-    if (!existsSync16(inputPath)) refuse(`/cyberine-taskboard:tasks save: no such input file: ${inputPath}`);
-    raw = readFileSync17(inputPath, "utf8");
+    if (!existsSync10(inputPath)) refuse(`/cyberine-taskboard:tasks save: no such input file: ${inputPath}`);
+    raw = readFileSync11(inputPath, "utf8");
   } else {
     raw = await readStdin();
   }
@@ -5509,10 +4395,15 @@ ${draftErrors.map((error) => `  - ${error}`).join("\n")}`);
   withLock(paths, () => {
     const result = convergeApply(paths, items, out, warn, true, true);
     const decisions = items;
+    const { blocks } = parseManifestBlocks(readFileSync11(paths.manifest, "utf8"), TASK_ID_RE);
     for (const created of result.created) {
       const decision = decisions.find((d) => d.title === created.title);
       if (decision === void 0 || typeof decision.do !== "string") continue;
-      for (const issue of taskQualityIssues({ do: decision.do, effort: decision.effort, hasBrief: true })) {
+      const block = blocks.find((b) => b.id === created.id);
+      for (const issue of (block ? ownerMixForBlock(block, { blocks })?.issues : void 0) ?? []) {
+        warn(`save: warning: ${created.id}: ${issue}`);
+      }
+      for (const issue of missingVerifyIssues({ exec: decision.exec, verify: decision.verify })) {
         warn(`save: warning: ${created.id}: ${issue}`);
       }
     }
@@ -5530,7 +4421,7 @@ async function runDraft(args2) {
   if (titles.length !== 1 || !titles[0]?.trim()) refuse('/cyberine-taskboard:tasks draft: a "<title>" is required');
   const file = flagValue(args2, "--file");
   const useStdin = hasFlag(args2, "--stdin");
-  if (file && (!existsSync16(file) || !statSync4(file).isFile())) refuse(`/cyberine-taskboard:tasks draft: --file not found: ${file}`);
+  if (file && (!existsSync10(file) || !statSync2(file).isFile())) refuse(`/cyberine-taskboard:tasks draft: --file not found: ${file}`);
   const stdin = file || !useStdin ? void 0 : await readStdin();
   if (useStdin && !file && !stdin?.trim()) refuse("/cyberine-taskboard:tasks draft: --stdin given but no input received");
   const result = writeDraft({
@@ -5546,20 +4437,8 @@ async function runDraft(args2) {
   out(`drafted: ${result.path.slice(result.root.length + 1)}`);
   out(`  in repo: ${result.root}`);
   out(`  from:    ${result.from}`);
-  if (flagValue(args2, "--to")) out(`  NOTE: draft-and-leave -- the next session of ${basename5(result.root)} picks it up.`);
+  if (flagValue(args2, "--to")) out(`  NOTE: draft-and-leave -- the next session of ${basename4(result.root)} picks it up.`);
   else out("  next: /cyberine-taskboard:tasks inbox  (this repo)");
-}
-function runBanner(args2) {
-  const cwdIdx = args2.indexOf("--cwd");
-  const cwd = cwdIdx >= 0 && args2[cwdIdx + 1] ? resolve2(args2[cwdIdx + 1]) : process.cwd();
-  let result = { banner: "", inputs: [] };
-  try {
-    result = boardBannerView(resolveBoard(cwd), cwd);
-  } catch (error) {
-    console.error("/cyberine-taskboard:tasks banner: board unreadable, staying silent:", error.message);
-  }
-  process.stdout.write(args2.includes("--json") ? `${JSON.stringify(result)}
-` : result.banner);
 }
 async function runGuard() {
   const chunks = [];
@@ -5589,7 +4468,8 @@ var PROMOTION_TRIGGERS = {
   add: () => true,
   deps: (rest) => rest[0] === "set",
   merge: (rest) => rest[0] !== "--reject",
-  save: (rest) => !rest.includes("--schema")
+  save: (rest) => !rest.includes("--schema"),
+  split: (rest) => !rest.includes("--schema") && !rest.includes("--dry")
 };
 function afterBoardWrite(paths, sub2, rest) {
   if (process.exitCode) return;
@@ -5631,9 +4511,14 @@ async function cmdTasksBoard(argv) {
       case "init":
         out(initBoard(paths.root, rest));
         return;
-      case "relocate":
-        out(relocateBoard(paths.root, rest));
+      case "relocate": {
+        const scope = submoduleScope(process.cwd());
+        if (scope && !rest.includes("--board-wide")) {
+          refuse(`/cyberine-taskboard:tasks relocate: this session is in submodule ${scope}/ of a hub board; relocating moves the WHOLE hub board -- run it from the hub root, or add --board-wide to do it from here`);
+        }
+        out(relocateBoard(paths.root, rest.filter((a) => a !== "--board-wide")));
         return;
+      }
       case "status":
         runStatus(paths, rest);
         afterBoardWrite(paths, sub2, rest);
@@ -5642,7 +4527,7 @@ async function cmdTasksBoard(argv) {
         runRecurring(paths, rest);
         return;
       case "add":
-        runAdd(paths, rest);
+        await runAdd(paths, rest);
         afterBoardWrite(paths, sub2, rest);
         return;
       case "set":
@@ -5686,6 +4571,9 @@ async function cmdTasksBoard(argv) {
       case "journal":
         runJournal(paths, rest);
         return;
+      case "decide":
+        runDecide(paths, rest);
+        return;
       case "timeline":
         runTimeline(paths, rest);
         return;
@@ -5705,11 +4593,21 @@ async function cmdTasksBoard(argv) {
         await runConvergeApply(paths, rest);
         afterBoardWrite(paths, sub2, rest);
         return;
+      case "split":
+        await runSplit(paths, rest);
+        afterBoardWrite(paths, sub2, rest);
+        return;
       case "draft":
         await runDraft(rest);
         return;
       case "inbox":
-        if (rest.length) refuse("/cyberine-taskboard:tasks inbox: no arguments accepted");
+        if (rest[0] === "reject") {
+          runInboxReject(paths, rest.slice(1));
+          return;
+        }
+        if (rest.length) refuse(`/cyberine-taskboard:tasks inbox: unexpected argument(s): ${rest.join(" ")}
+
+${INBOX_REJECT_USAGE}`);
         try {
           process.stdout.write(gatherDrafts(paths.root, paths.draftsDir));
         } catch (error) {
@@ -5726,6 +4624,9 @@ async function cmdTasksBoard(argv) {
         return;
       case "hygiene":
         runHygiene(paths, rest);
+        return;
+      case "comments":
+        runComments(paths, rest);
         return;
       case "move":
         runMove(paths, rest);
@@ -5751,8 +4652,8 @@ async function cmdTasksBoard(argv) {
 }
 
 // src/tasks/boardYield.ts
-import { existsSync as existsSync17, readFileSync as readFileSync18, realpathSync as realpathSync2, statSync as statSync5 } from "node:fs";
-import { delimiter, dirname as dirname6, join as join11 } from "node:path";
+import { existsSync as existsSync11, readFileSync as readFileSync12, realpathSync as realpathSync3, statSync as statSync3 } from "node:fs";
+import { delimiter, dirname as dirname6, join as join8 } from "node:path";
 var BIG_PLUGIN_NAME = "cyberine";
 var BIG_PLUGIN_KEY_PREFIX = "cyberine@";
 var HOOK_LAUNCHERS = {
@@ -5770,16 +4671,16 @@ function isRecord(value) {
 }
 function readJson(file) {
   try {
-    return JSON.parse(readFileSync18(file, "utf8"));
+    return JSON.parse(readFileSync12(file, "utf8"));
   } catch {
     return void 0;
   }
 }
 function bigPluginLinked(home) {
   try {
-    const dir = realpathSync2(join11(home, ".claude", "skills", BIG_PLUGIN_NAME));
-    if (!statSync5(dir).isDirectory()) return false;
-    const manifest = readJson(join11(dir, ".claude-plugin", "plugin.json"));
+    const dir = realpathSync3(join8(home, ".claude", "skills", BIG_PLUGIN_NAME));
+    if (!statSync3(dir).isDirectory()) return false;
+    const manifest = readJson(join8(dir, ".claude-plugin", "plugin.json"));
     return isRecord(manifest) && manifest.name === BIG_PLUGIN_NAME;
   } catch {
     return false;
@@ -5787,9 +4688,9 @@ function bigPluginLinked(home) {
 }
 function settingsScopeFiles(home, cwd) {
   return [
-    join11(home, ".claude", "settings.json"),
-    join11(cwd, ".claude", "settings.json"),
-    join11(cwd, ".claude", "settings.local.json")
+    join8(home, ".claude", "settings.json"),
+    join8(cwd, ".claude", "settings.json"),
+    join8(cwd, ".claude", "settings.local.json")
   ];
 }
 function bigPluginEnabledInSettings(home, cwd) {
@@ -5807,10 +4708,10 @@ function bigPluginEnabledInSettings(home, cwd) {
 function bigPluginBinDir(env) {
   for (const dir of (boardEnv("PATH", env) ?? "").split(delimiter)) {
     if (!dir) continue;
-    const candidate = join11(dir, BIG_PLUGIN_NAME);
-    if (!existsSync17(candidate)) continue;
+    const candidate = join8(dir, BIG_PLUGIN_NAME);
+    if (!existsSync11(candidate)) continue;
     try {
-      return dirname6(realpathSync2(candidate));
+      return dirname6(realpathSync3(candidate));
     } catch {
       return null;
     }
@@ -5819,7 +4720,7 @@ function bigPluginBinDir(env) {
 }
 function bigPluginHooksFindCli(mode, env) {
   const binDir = bigPluginBinDir(env);
-  return binDir !== null && existsSync17(join11(binDir, HOOK_LAUNCHERS[mode]));
+  return binDir !== null && existsSync11(join8(binDir, HOOK_LAUNCHERS[mode]));
 }
 function bigPluginHooksWouldRun(mode, env, home, cwd) {
   if (!bigPluginHooksFindCli(mode, env)) return false;

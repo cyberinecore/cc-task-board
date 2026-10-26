@@ -2,6 +2,13 @@
 
 All notable changes to Cyberine TaskBoard. Versions follow `version` in `.claude-plugin/plugin.json`; each release is tagged `cyberine-taskboard--v<version>`.
 
+## [0.3.2] - 2026-10-26
+
+- Re-vendored from the upstream board source at 318d5de5. The CLI is split into smaller files (`cli/tasks.mjs` is now 196,617 bytes, down from 242,698), which leaves wide headroom under the directory's 256 KiB per-file inspection limit.
+- The board voice now states who decides what (the agent takes reversible design choices alone; the user decides irreversible or outward actions) and gives manual steps one checkpoint at a time. The tasks skill shapes owner work into separate "Owner:" tasks and can split an existing task.
+- Also carries the 0.3.1-era re-vendor from 9302826c, which shipped without its own entry.
+- The README banner is now a 112 KB JPEG instead of a 757 KB PNG.
+
 ## [0.3.1] - 2026-10-21
 
 - The session-start banner now also shows in a forked session (`SessionStart` source `fork`, which Claude Code added alongside `startup`, `resume`, `clear` and `compact`).

@@ -1,6 +1,6 @@
 # Cyberine TaskBoard
 
-![Cyberine TaskBoard: a repository's backlog carried from one Claude Code session to the next](assets/banner.png)
+![Cyberine TaskBoard: a repository's backlog carried from one Claude Code session to the next](assets/banner.jpg)
 
 A backlog that outlives every Claude Code session. Claude Code's own todo list dies with the session; Cyberine TaskBoard keeps the backlog in a file inside your repository, and every new session opens with a one-line banner saying what is in progress, what is next and what is blocked.
 

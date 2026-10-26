@@ -1,7 +1,7 @@
 {
   "program": "/cyberine-taskboard:tasks",
   "tag": "taskboard",
-  "version": "0.3.1",
-  "source": "9302826c",
-  "pluginVersion": "0.3.1"
+  "version": "0.3.2",
+  "source": "318d5de5",
+  "pluginVersion": "0.3.2"
 }

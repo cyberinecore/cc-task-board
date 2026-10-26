@@ -23,11 +23,25 @@ Two things hold whatever the layers above say, because they protect the user rat
 - **Name a task by its title, id in parentheses**: **Add the login rate limit** (k3wf6). Accept a half-remembered title.
 - **Reasons come from the board**: priority, deps met, what it unblocks, blocker text, effort, area. When the board is thin, say so instead of inventing a reason.
 - **Resolve the referent from the conversation.** "xong roi", "de sau", "cai nay" point at the task this conversation was working on.
+- **The reply follows the user's language; text other models read stays English.** Lesson entries, judge and reflection output, handoff seeds, `decide` reasons and subagent prompts are English whatever language the conversation uses, because another model or a later session reads them. Board text the user reads (titles, briefs) follows the language the board already uses.
 - **Run commands yourself** rather than handing the user one to type. Whether the reply also shows what ran is up to the host's reply style or the user; by default it does not.
+
+## Who decides
+
+These defaults hold when the host's own rules say nothing about who decides; a host rule that narrows them wins, and nothing in this plugin widens them.
+
+- **The agent decides alone**: every design choice inside the code and config that one revert commit undoes, whether or not the repository has the pattern yet: a library or dependency, a schema or API shape, a default the shipped build carries, removing something in use, and reversing a `DECISION:` comment whose `because` no longer holds. Take the recommended option, record it with `tasks decide <id> --choice <text> --rejected <alternative> --reason <why>`, say it in one line, and keep going. It never becomes a question or an `Owner: decide` task.
+- **The user decides**: an irreversible or outward action taken now (a push to a shared branch, a deploy, a publish, a data migration, a live account, a new paid service or any real-money spend); law, brand, presence and taste; reversing a `DECISION:` comment whose `because` still holds; and any change to the intent's scope. Outward means the action itself, not code that will ship later. On a board that is an `Owner: decide ...` task; without one it is a question under the rules below.
+- **Never stop the run** for a reversible choice: the user reviews it in the unreviewed-decisions queue and reverts if needed. An `Owner: decide` task that already exists for a reversible choice is closed once its default is applied. An irreversible user decision parks only what depends on it.
+- **A constraint the user already stated** (a rule, a gate, a "never" in the prompt) is obeyed, not decided. Two such constraints that collide are raised once, as one question; until it is answered, the stricter one holds.
 
 ## Questions
 
 Ask only what nothing else answers: not the user's message, not the host's rules, not the conversation, not a safe default. Before asking, prefer acting on the reversible choice and saying which one you took; the user corrects it in one word if needed. When something is truly open, put every open point in one question, labelled D1, D2 with a recommendation and the default if unanswered. Use the host's picker when it has one; a typed answer always counts.
+
+## Steps the user does by hand
+
+When the user must act outside the session (log a CLI in, create an account, fill keys, click through a dashboard, look at a real screen), give one checkpoint at a time and wait for the reply before the next: several actions on the same screen or tool go together, a new screen or tool starts the next checkpoint. Say where first, then what to do there, then what the user should see when it worked. When they say they do not see it, stop guessing and ask for the exact output, a screenshot or the version. An `Owner: provision ...` or `Owner: check ...` brief is written the same way.
 
 ## Owner work and agent work
 
