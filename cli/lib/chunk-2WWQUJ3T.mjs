@@ -14,11 +14,11 @@ import {
   validateDecisions,
   validateFieldPair,
   withTaskDefaults
-} from "./chunk-66MJ3JXB.mjs";
+} from "./chunk-T636BNCF.mjs";
 import {
   appendJournalEvents,
   normalizeHost
-} from "./chunk-ODYPGOF4.mjs";
+} from "./chunk-3V2BXNFG.mjs";
 import {
   RECURRING_ID_RE,
   TASK_ID_RE,
@@ -42,7 +42,7 @@ import {
   scopeForBoard,
   todayLocalDate,
   writeFileAtomic
-} from "./chunk-KIJLE46J.mjs";
+} from "./chunk-GIU6R332.mjs";
 
 // src/tasks/boardSplit.ts
 import { createHash } from "node:crypto";
@@ -386,6 +386,7 @@ function toTask(block, status, manifestPath, fork) {
   const exec = fieldValue(block, "exec");
   const model = fieldValue(block, "model");
   const blocker = presentValue(block, "blocker");
+  const waitsOn = presentValue(block, "waits-on");
   const doText = fieldValue(block, "do");
   const doneWhen = fieldValue(block, "done-when");
   const verify = fieldValue(block, "verify");
@@ -407,6 +408,7 @@ function toTask(block, status, manifestPath, fork) {
     ...exec !== void 0 && { exec },
     ...model !== void 0 && { model },
     ...blocker !== void 0 && { blocker },
+    ...waitsOn !== void 0 && { waitsOn },
     ...doText !== void 0 && { do: doText },
     ...doneWhen !== void 0 && { doneWhen },
     ...verify !== void 0 && verify !== "-" && verify.trim() !== "" && { verify: verify.trim() },
@@ -526,7 +528,7 @@ var SPLIT_SCHEMA_TEXT = `/cyberine-taskboard:tasks split <id> --input <file|-> [
 }
 
 Shapes: resource = one owner + one verify task (verify deps on @owner and @source); decision = one
-"Owner: decide" task, no verify, amend.deps gains @owner; eyes = one owner task with deps on @source,
+"Owner: decide" task (it carries "default" and "undoCost", both required), no verify, amend.deps gains @owner; eyes = one owner task with deps on @source,
 no verify; convert = no tasks, amend.exec "manual". Roles: owner (exec manual, model null, title
 "Owner: ..."), verify, agent. The contract is docs/tasks-manifest.md section 15.`;
 var OP_RE = /^[a-z0-9][a-z0-9-]{5,63}$/;
@@ -835,7 +837,10 @@ ${errors.map((e) => `  - ${e}`).join("\n")}`);
   if (amend.exec !== void 0) setField("exec", amend.exec);
   if (amend.model !== void 0) setField("model", amend.model === null ? "-" : amend.model);
   if (amend.exec === "manual" && currentField("reasoning") !== null) setField("reasoning", null);
-  if ("blocker" in amend) setField("blocker", null);
+  if ("blocker" in amend) {
+    setField("blocker", null);
+    setField("waits-on", null);
+  }
   if (amend.do !== void 0) setField("do", collapseWhitespace(amend.do));
   if (amend.doneWhen !== void 0) setField("done-when", collapseWhitespace(amend.doneWhen));
   if (amend.deps !== void 0) {

@@ -13,7 +13,7 @@ import {
   recurringList,
   setRecurring,
   splitTask
-} from "./lib/chunk-6YK6MUHU.mjs";
+} from "./lib/chunk-2WWQUJ3T.mjs";
 import {
   analyze,
   formatReport,
@@ -21,7 +21,7 @@ import {
   hasBlockingFindings,
   missingBriefIssues,
   missingVerifyIssues
-} from "./lib/chunk-XTWUA5RY.mjs";
+} from "./lib/chunk-WOW5KK7T.mjs";
 import {
   addStaleHeaderNoteLocked,
   analyzeHygiene,
@@ -29,17 +29,14 @@ import {
   findCandidates,
   formatHygiene,
   tidyBoard
-} from "./lib/chunk-JOHVUZOV.mjs";
-import {
-  ownerMixForBlock
-} from "./lib/chunk-UV3X3JLP.mjs";
+} from "./lib/chunk-FYYNIZRE.mjs";
 import {
   boardBannerView,
   boardStatusView,
   boardView,
   healthLines,
   recurringEntries
-} from "./lib/chunk-ZQMU7SWD.mjs";
+} from "./lib/chunk-QSBQPOMF.mjs";
 import {
   archiveIdsFor,
   computeRunnable,
@@ -48,7 +45,7 @@ import {
   missingDeps,
   scopeRunnableSets,
   submoduleScopeNotice
-} from "./lib/chunk-SH2Y6DI2.mjs";
+} from "./lib/chunk-SKIZJWFT.mjs";
 import {
   ArchivePartialError,
   BoardRejected,
@@ -59,6 +56,7 @@ import {
   WRITABLE_STATUSES,
   archiveAbortLabel,
   archiveLocked,
+  archivedBlocks,
   archivedIds,
   convergeApply,
   coreEnd,
@@ -79,7 +77,16 @@ import {
   showDeps,
   validateDraftReferences,
   writeDraft
-} from "./lib/chunk-66MJ3JXB.mjs";
+} from "./lib/chunk-T636BNCF.mjs";
+import {
+  WAITS_ON_SHAPE,
+  missingDecideFields,
+  noteSuffix,
+  ownerMixForBlock,
+  resolveProvenance,
+  waitsOnError,
+  waitsOnOf
+} from "./lib/chunk-7XHG2DEQ.mjs";
 import {
   appendJournalEvents,
   deriveDayTitle,
@@ -96,7 +103,7 @@ import {
   unlock,
   unreviewedDecisionLines,
   unreviewedDecisions
-} from "./lib/chunk-ODYPGOF4.mjs";
+} from "./lib/chunk-3V2BXNFG.mjs";
 import {
   AmbiguousIdError,
   BoardFormatTooNew,
@@ -138,7 +145,7 @@ import {
   submoduleScope,
   todayLocalDate,
   writeFileAtomic
-} from "./lib/chunk-KIJLE46J.mjs";
+} from "./lib/chunk-GIU6R332.mjs";
 
 // scripts/taskboard-bundle/entry.ts
 import { homedir } from "node:os";
@@ -1862,6 +1869,7 @@ function item(t, why, unmet) {
     priority: t.priority ?? "",
     exec: t.exec ?? "",
     blocker: t.blocker ?? "",
+    waitsOn: waitsOnOf(t.waitsOn) || null,
     unmet,
     path: t.path ?? "",
     why
@@ -1906,7 +1914,7 @@ function formatBoardGroups(groups, doing) {
     if (list.length > cap) lines.push(`  ... ${list.length - cap} more (next --groups --json lists all)`);
   };
   const plain = (i) => `${i.id}  ${i.title}${i.priority ? `  [${i.priority}]` : ""}`;
-  const reason = (i) => `${i.id}  ${i.title}  -- ${i.blocker ? `blocker: ${clip(i.blocker)}` : i.why}`;
+  const reason = (i) => `${i.id}  ${i.title}  -- ${i.blocker ? `blocker: ${clip(i.blocker)}${i.waitsOn ? `  (waits on: ${i.waitsOn})` : ""}` : i.why}`;
   section("Agent-runnable now", groups.runnable, plain, Infinity);
   section("Waiting on owner resource", groups.ownerResource, reason, Infinity);
   section("Owner decisions", groups.decisions, reason, Infinity);
@@ -1955,6 +1963,7 @@ function boardStatusJson(view, manifest) {
       deps: t.deps,
       unmet: t.missing,
       blocker: t.blocker,
+      waitsOn: t.waitsOn === "" ? null : t.waitsOn,
       reason: t.reason,
       duplicateOf: t.duplicateOf,
       path: t.path,
@@ -1962,7 +1971,11 @@ function boardStatusJson(view, manifest) {
       created: t.created,
       ready: ready.has(t.id),
       stale: stale.has(t.id),
-      exec: t.exec
+      exec: t.exec,
+      source: t.source,
+      verified: t.verified,
+      default: t.default !== "" && t.default !== "-" ? t.default : null,
+      undoCost: t.undoCost !== "" && t.undoCost !== "-" ? t.undoCost : null
     })),
     recurring: view.recurring.map((e) => ({
       id: e.id,
@@ -2014,7 +2027,7 @@ function boardNextJson(scoped, manifest, opts = {}) {
         cycles: unmet.filter((d) => resolveDuplicateOf(sets.dupMap, d).cycle)
       };
     }),
-    blocked: sets.waiting.map((t) => ({ id: t.id, title: t.title, blocker: t.blocker ?? "" })),
+    blocked: sets.waiting.map((t) => ({ id: t.id, title: t.title, blocker: t.blocker ?? "", waitsOn: waitsOnOf(t.waitsOn) || null })),
     doing: sets.doing.map((t) => ({ id: t.id, title: t.title, path: t.path ?? "" })),
     ...groups && { groups: { counts: groupCounts(groups), ...groups } }
   };
@@ -2692,14 +2705,19 @@ var USAGE = `Usage: /cyberine-taskboard:tasks <subcommand> [...]
   recurring set <Rxx> [--title <t>] [--every <N>d|w|m] [--do <text>] [--exec <e>|-]
       [--model <m>|-] [--reasoning <r>|-] [--last-done YYYY-MM-DD|-]
   recurring drop <Rxx>
-${FLEET_USAGE}  status block <id> "<reason>"
+${FLEET_USAGE}  status block <id> "<reason>" [--waits-on user|repo:<path>|session:<name>|upstream:<vendor>|event:<what>]   (unblock clears waits-on)
   status unblock <id>
   add --title <t> --do <d> --done-when <w> --effort S|M|L [--status todo|backlog] [--created-by <who>]
       [--model <tier>] [--reasoning low|medium|high|xhigh|max] [--exec agent|manual|opencode] [--priority p0|p1|p2]
-      [--area <a>] [--deps <ids>] [--why <w>] [--brief <text> | --brief-file <path|->]
+      [--area <a>] [--deps <ids>] [--why <w>] [--brief <text> | --brief-file <path|->] [--waits-on user|repo:<path>|session:<name>|upstream:<vendor>|event:<what>|-]
+      [--source peer:<session>|user|agent (--verified "<how>" | --unverified)]
+      [--default <text>] [--undo-cost <text>]   (BOTH required when the title starts "Owner: decide")
   set <id> [--effort S|M|L] [--reasoning <level>|-] [--model <tier>|-] [--exec agent|manual|opencode] [--priority p0|p1|p2]
       [--title <text>] [--do <text>] [--done-when <text>] [--why <text>|-] [--path <repo-relative dir>|-]
+      [--waits-on user|repo:<path>|session:<name>|upstream:<vendor>|event:<what>|-]
       [--verify "<cmd>"|-] [--reason <text>]   (a task with verify: closes only when <cmd> exits 0)
+      [--default <text>|-] [--undo-cost <text>|-]   (on an "Owner: decide" task "-" is refused)
+      [--source peer:<session>|user|agent|- (--verified "<how>" | --unverified)]   (- clears source and verified)
       (--reason is REQUIRED with --do or --done-when)
   set --batch <json-file|-> --by <model-id>   ({"changes":[{"id","model"?,"reasoning"?,"exec"?,"priority"?,"effort"?}...]})
       All-or-nothing: one bad entry rejects the whole batch, one write, one journal event
@@ -2717,8 +2735,10 @@ ${END_LINES}  reconcile [--dry-run] [--board-wide]
                                             (the only way to remove an archived, [done] or
                                             [forbidden] id)
   log [--by <model>] "<what was done>" ["<...>" ...]
-  note <id> "<text>"                        Append a dated update line to the manifest block
-  brief note <id> "<text>"                  Append a dated entry to the brief's ## Updates
+  note <id> "<text>" [--source peer:<session>|user|agent (--verified "<how>" | --unverified)]
+                                            Append a dated update line to the manifest block
+  brief note <id> "<text>" [--source ... (--verified "<how>" | --unverified)]
+                                            Append a dated entry to the brief's ## Updates
   journal "<title>" [--body <text>] [--id <id>]
   journal --title "<text>"
   decide <id> --choice "<text>" --rejected "<alternative>" --reason "<why>" [--status auto|owner] [--by <model-or-agent>]
@@ -2767,7 +2787,7 @@ ${END_LINES}  reconcile [--dry-run] [--board-wide]
 
 Bare \`/cyberine-taskboard:tasks\` (optionally with --all, --summary or --json) is \`/cyberine-taskboard:tasks status\`.
 Ids accept git-style unambiguous prefixes. Validation refusals exit 2.`;
-var SET_USAGE_LINE = "usage: set <id> [--effort|--reasoning|--model|--exec|--priority|--title|--do|--done-when|--why|--path|--verify <v>] [--reason <text>] (--reason is required with --do or --done-when)";
+var SET_USAGE_LINE = "usage: set <id> [--effort|--reasoning|--model|--exec|--priority|--title|--do|--done-when|--why|--path|--verify|--default|--undo-cost|--waits-on|--source|--verified <v>] [--unverified] [--reason <text>] (--reason is required with --do or --done-when)";
 var SELF_HELP_SUBCOMMANDS = /* @__PURE__ */ new Set(["run", "group", "promote", "end", "drop", "forget", "note", "brief", "board", "draft"]);
 function subcommandUsage(sub2) {
   const picked = [];
@@ -2804,6 +2824,33 @@ function positionals(args2, valueFlags) {
       continue;
     }
     if (a.startsWith("--")) continue;
+    rest.push(a);
+  }
+  return rest;
+}
+var PROVENANCE_VALUE_FLAGS = ["--source", "--verified"];
+function provenanceFromArgs(args2, cmd) {
+  const resolved = resolveProvenance({
+    source: flagValue(args2, "--source"),
+    verified: flagValue(args2, "--verified"),
+    unverified: hasFlag(args2, "--unverified")
+  });
+  if (resolved.errors.length) {
+    refuse(`/cyberine-taskboard:tasks ${cmd}: nothing written --
+${resolved.errors.map((e) => `  - ${e}`).join("\n")}`);
+  }
+  return { source: resolved.source, verified: resolved.verified };
+}
+function stripProvenanceArgs(args2) {
+  const rest = [];
+  for (let i = 0; i < args2.length; i++) {
+    const a = args2[i];
+    if (a === "--unverified") continue;
+    if (PROVENANCE_VALUE_FLAGS.some((f) => a.startsWith(`${f}=`))) continue;
+    if (PROVENANCE_VALUE_FLAGS.includes(a)) {
+      i++;
+      continue;
+    }
     rest.push(a);
   }
   return rest;
@@ -2931,10 +2978,26 @@ function runStatus(paths, args2) {
     return;
   }
   if (token === "block") {
-    const id = args2[1];
-    const reason = args2.slice(2).join(" ");
-    if (!id) refuse('/cyberine-taskboard:tasks status block: usage: status block <id> "<reason>"');
-    out(withLock(paths, () => setBlocker(paths, id, reason)));
+    const rest = args2.slice(1);
+    let waitsOn;
+    const kept = [];
+    for (let i = 0; i < rest.length; i++) {
+      const a = rest[i];
+      if (a === "--waits-on") {
+        waitsOn = rest[++i];
+        if (waitsOn === void 0 || waitsOn.startsWith("--")) refuse(`/cyberine-taskboard:tasks status block: --waits-on needs a value (${WAITS_ON_SHAPE}) -- nothing written`);
+      } else if (a.startsWith("--waits-on=")) {
+        waitsOn = a.slice("--waits-on=".length);
+      } else kept.push(a);
+    }
+    const id = kept[0];
+    const reason = kept.slice(1).join(" ");
+    if (!id) refuse('/cyberine-taskboard:tasks status block: usage: status block <id> "<reason>" [--waits-on <user|repo:<path>|session:<name>|upstream:<vendor>|event:<what>>]');
+    if (waitsOn !== void 0) {
+      const waitsErr = waitsOnError(waitsOn);
+      if (waitsErr !== null) refuse(`/cyberine-taskboard:tasks status block: ${waitsErr} -- nothing written`);
+    }
+    out(withLock(paths, () => setBlocker(paths, id, reason, waitsOn)));
     return;
   }
   if (token === "unblock") {
@@ -3153,7 +3216,12 @@ async function runAdd(paths, args2) {
     "--brief",
     "--brief-file",
     "--status",
-    "--created-by"
+    "--created-by",
+    "--source",
+    "--verified",
+    "--default",
+    "--undo-cost",
+    "--waits-on"
   ];
   const title = flagValue(args2, "--title");
   const doText = flagValue(args2, "--do");
@@ -3165,8 +3233,9 @@ async function runAdd(paths, args2) {
   if (!doText || !doText.trim()) refuse("/cyberine-taskboard:tasks add: --do is required and non-empty");
   if (!doneWhen || !doneWhen.trim()) refuse("/cyberine-taskboard:tasks add: --done-when is required and non-empty");
   if (!effort) refuse("/cyberine-taskboard:tasks add: --effort is REQUIRED (S|M|L)");
-  const unknown = args2.filter((a) => a.startsWith("--") && !VALUE_FLAGS.includes(a.split("=")[0]));
+  const unknown = args2.filter((a) => a.startsWith("--") && a !== "--unverified" && !VALUE_FLAGS.includes(a.split("=")[0]));
   if (unknown.length) refuse(`/cyberine-taskboard:tasks add: unknown flag(s): ${unknown.join(" ")}`);
+  const provenance = provenanceFromArgs(args2, "add");
   const exec = flagValue(args2, "--exec") ?? DEFAULT_TASK_EXEC;
   const model = exec === "manual" ? null : flagValue(args2, "--model") ?? DEFAULT_TASK_MODEL;
   const priority = flagValue(args2, "--priority");
@@ -3174,12 +3243,24 @@ async function runAdd(paths, args2) {
   const area = flagValue(args2, "--area");
   const deps = flagValue(args2, "--deps");
   const why = flagValue(args2, "--why");
+  const defaultText = flagValue(args2, "--default");
+  const undoCost = flagValue(args2, "--undo-cost");
+  const missingDecide = missingDecideFields(title, { default: defaultText, undoCost });
+  if (missingDecide.length) {
+    refuse(`/cyberine-taskboard:tasks add: an Owner: decide task needs a default and an undo cost -- missing ${missingDecide.map((m) => m === "default" ? "--default <what happens if the owner never answers>" : "--undo-cost <what reversing it costs>").join(" and ")}; nothing written`);
+  }
   const status = flagValue(args2, "--status") ?? "todo";
   if (!WRITABLE_STATUSES.includes(status)) {
     refuse(`/cyberine-taskboard:tasks add: --status must be one of ${WRITABLE_STATUSES.join(" | ")}, got "${status}"`);
   }
   refuseIfPromoting(status, "/cyberine-taskboard:tasks add --status (default todo)");
   const createdBy = flagValue(args2, "--created-by");
+  const waitsOnRaw = flagValue(args2, "--waits-on");
+  if (waitsOnRaw !== void 0 && waitsOnRaw.trim() !== "-") {
+    const waitsErr = waitsOnError(waitsOnRaw);
+    if (waitsErr !== null) refuse(`/cyberine-taskboard:tasks add: --waits-on: ${waitsErr} -- nothing written`);
+  }
+  const waitsOn = waitsOnRaw === void 0 || waitsOnRaw.trim() === "-" ? void 0 : waitsOnRaw.trim();
   if (briefText !== void 0 && briefFile !== void 0) refuse("/cyberine-taskboard:tasks add: give --brief <text> or --brief-file <path|->, not both");
   let briefBody;
   if (briefText !== void 0) {
@@ -3205,8 +3286,13 @@ async function runAdd(paths, args2) {
     ...area !== void 0 && { area: area.split(/[,\s]+/).filter(Boolean) },
     ...deps !== void 0 && { deps: deps.split(/[,\s]+/).filter(Boolean) },
     ...why !== void 0 && { why },
+    ...defaultText !== void 0 && { default: defaultText },
+    ...undoCost !== void 0 && { undoCost },
     ...status !== "todo" && { status },
-    ...createdBy !== void 0 && { createdBy }
+    ...createdBy !== void 0 && { createdBy },
+    ...provenance.source !== void 0 && { source: provenance.source },
+    ...provenance.verified !== void 0 && { verified: provenance.verified },
+    ...waitsOn !== void 0 && { waitsOn }
   };
   const applyOut = briefBody === void 0 ? out : (line) => {
     if (line !== "briefs written: none") out(line);
@@ -3220,7 +3306,7 @@ async function runAdd(paths, args2) {
       }
       const { blocks } = parseManifestBlocks(readFileSync11(paths.manifest, "utf8"), TASK_ID_RE);
       const block = blocks.find((b) => b.id === createdId);
-      for (const issue of (block ? ownerMixForBlock(block, { blocks })?.issues : void 0) ?? []) {
+      for (const issue of (block ? ownerMixForBlock(block, { blocks, archiveBlocks: archivedBlocks(paths.archive) })?.issues : void 0) ?? []) {
         warn(`/cyberine-taskboard:tasks add: warning: ${createdId}: ${issue}`);
       }
     }
@@ -3247,7 +3333,12 @@ var SET_FLAGS = /* @__PURE__ */ new Set([
   "--why",
   "--reason",
   "--path",
-  "--verify"
+  "--verify",
+  "--default",
+  "--undo-cost",
+  "--waits-on",
+  "--source",
+  "--verified"
 ]);
 var BATCH_SET_USAGE = `usage: /cyberine-taskboard:tasks set --batch <json-file|-> --by <model-id>
 
@@ -3307,6 +3398,8 @@ async function runSet(paths, args2) {
   if (!id || id.startsWith("--")) {
     refuse(`/cyberine-taskboard:tasks set: ${SET_USAGE_LINE}`);
   }
+  const unverified = args2.includes("--unverified");
+  args2 = args2.filter((a) => a !== "--unverified");
   for (let i = 1; i < args2.length; i += 2) {
     const flag = args2[i];
     if (!SET_FLAGS.has(flag)) {
@@ -3328,6 +3421,21 @@ async function runSet(paths, args2) {
   const reason = flagValue(args2, "--reason");
   const pathValue = flagValue(args2, "--path");
   const verify = flagValue(args2, "--verify");
+  const defaultText = flagValue(args2, "--default");
+  const undoCost = flagValue(args2, "--undo-cost");
+  if (defaultText !== void 0) changes.default = defaultText;
+  if (undoCost !== void 0) changes.undoCost = undoCost;
+  const waitsOnSet = flagValue(args2, "--waits-on");
+  if (waitsOnSet !== void 0) changes.waitsOn = waitsOnSet;
+  const sourceSet = flagValue(args2, "--source");
+  const verifiedSet = flagValue(args2, "--verified");
+  if (sourceSet !== void 0 || verifiedSet !== void 0 || unverified) {
+    if (verifiedSet !== void 0 && unverified) refuse("/cyberine-taskboard:tasks set: --verified and --unverified are mutually exclusive -- nothing written");
+    if (verifiedSet !== void 0 && verifiedSet.trim().toLowerCase() === "no") refuse('/cyberine-taskboard:tasks set: --verified "no" is the unverified marker -- pass --unverified instead; nothing written');
+    if (sourceSet !== void 0) changes.source = sourceSet;
+    if (verifiedSet !== void 0) changes.verified = verifiedSet;
+    if (unverified) changes.verified = "no";
+  }
   if (verify !== void 0) changes.verify = verify;
   if (effort !== void 0) changes.effort = effort;
   if (reasoning !== void 0) changes.reasoning = reasoning;
@@ -3340,7 +3448,7 @@ async function runSet(paths, args2) {
   if (why !== void 0) changes.why = why;
   if (pathValue !== void 0) changes.path = pathValue;
   if (Object.keys(changes).length === 0) {
-    refuse("/cyberine-taskboard:tasks set: at least one of --effort/--reasoning/--model/--exec/--priority/--title/--do/--done-when/--why/--path/--verify is required");
+    refuse("/cyberine-taskboard:tasks set: at least one of --effort/--reasoning/--model/--exec/--priority/--title/--do/--done-when/--why/--path/--verify/--default/--undo-cost/--waits-on/--source/--verified/--unverified is required");
   }
   out(withLock(paths, () => setFields(paths, id, changes, reason)));
 }
@@ -3796,21 +3904,30 @@ function runLog(paths, args2) {
   out(`logged ${logged.length} done task(s) -> ${paths.archive}`);
   for (const l of logged) out(`  ${l.id}  ${l.desc}`);
 }
-var NOTE_USAGE = `usage: /cyberine-taskboard:tasks note <id> "<text>"
+var NOTE_USAGE = `usage: /cyberine-taskboard:tasks note <id> "<text>" [--source peer:<session>|user|agent (--verified "<how>" | --unverified)]
 
 Appends one dated line to the task's manifest block, below its fields:
   update <YYYY-MM-DD>: <text>
 and records the same text as a journal note attached to <id>. The line is
 not field-shaped, so every parser reads past it. <id> accepts an unambiguous
-prefix; recurring R<NN> and archived ids are refused.`;
-var BRIEF_NOTE_USAGE = `usage: /cyberine-taskboard:tasks brief note <id> "<text>"
+prefix; recurring R<NN> and archived ids are refused.
+
+--source records where the text came from. A peer source (another session's
+message) REQUIRES exactly one of --verified "<how you checked it against the
+repo or the screen>" or --unverified, else nothing is written. The line then
+ends with:
+  [source: peer:<session>; verified: <how>|no]
+and \`/cyberine-taskboard:tasks doctor\` lists the ones marked no.`;
+var BRIEF_NOTE_USAGE = `usage: /cyberine-taskboard:tasks brief note <id> "<text>" [--source peer:<session>|user|agent (--verified "<how>" | --unverified)]
 
 Adds one dated entry to the "## Updates" section at the TOP of tasks/<id>.md,
 creating the section above the first heading when absent:
   - <YYYY-MM-DD>: <text>
 Entries append oldest-first. The six brief sections are never rewritten.
 Records the same text as a journal note attached to <id>. Refuses a task that
-has no brief (use \`note <id>\` for the manifest block instead).`;
+has no brief (use \`note <id>\` for the manifest block instead). --source works
+as on \`note\`: a peer source needs --verified or --unverified, and the entry
+ends with [source: ...; verified: ...].`;
 var INBOX_REJECT_USAGE = `usage: /cyberine-taskboard:tasks inbox reject <draft-*.md...> --reason "<why>"
        /cyberine-taskboard:tasks inbox reject --all --reason "<why>"
 
@@ -3872,14 +3989,16 @@ function runNote(paths, args2) {
     out(NOTE_USAGE);
     return;
   }
-  const parsed = parseIdAndText(args2, "note", NOTE_USAGE);
+  const provenance = provenanceFromArgs(args2, "note");
+  const parsed = parseIdAndText(stripProvenanceArgs(args2), "note", NOTE_USAGE);
+  const text = `${parsed.text}${noteSuffix(provenance.source, provenance.verified)}`;
   const { id, line } = withLock(paths, () => {
     const resolvedId = resolveLiveTaskId(paths, parsed.rawId, "note");
-    const appendedLine = appendUpdateLine(paths.manifest, resolvedId, parsed.text);
+    const appendedLine = appendUpdateLine(paths.manifest, resolvedId, text);
     return { id: resolvedId, line: appendedLine };
   });
   out(`${id}: ${line}`);
-  journalNoteEvent(paths, id, `note ${id}: ${parsed.text}`, "note");
+  journalNoteEvent(paths, id, `note ${id}: ${text}`, "note");
 }
 function runBrief(paths, args2) {
   const [sub2, ...rest] = args2;
@@ -3893,14 +4012,16 @@ function runBrief(paths, args2) {
 
 ${BRIEF_NOTE_USAGE}`);
   }
-  const parsed = parseIdAndText(rest, "brief note", BRIEF_NOTE_USAGE);
+  const provenance = provenanceFromArgs(rest, "brief note");
+  const parsed = parseIdAndText(stripProvenanceArgs(rest), "brief note", BRIEF_NOTE_USAGE);
+  const text = `${parsed.text}${noteSuffix(provenance.source, provenance.verified)}`;
   const id = withLock(paths, () => {
     const resolvedId = resolveLiveTaskId(paths, parsed.rawId, "brief note");
-    addBriefUpdate(join7(paths.tasksDir, `${resolvedId}.md`), parsed.text);
+    addBriefUpdate(join7(paths.tasksDir, `${resolvedId}.md`), text);
     return resolvedId;
   });
   out(`${id}: brief updated (${UPDATES_HEADING})`);
-  journalNoteEvent(paths, id, `brief note ${id}: ${parsed.text}`, "brief note");
+  journalNoteEvent(paths, id, `brief note ${id}: ${text}`, "brief note");
 }
 function runDecide(paths, args2) {
   const values = /* @__PURE__ */ new Map();
@@ -4400,7 +4521,7 @@ ${draftErrors.map((error) => `  - ${error}`).join("\n")}`);
       const decision = decisions.find((d) => d.title === created.title);
       if (decision === void 0 || typeof decision.do !== "string") continue;
       const block = blocks.find((b) => b.id === created.id);
-      for (const issue of (block ? ownerMixForBlock(block, { blocks })?.issues : void 0) ?? []) {
+      for (const issue of (block ? ownerMixForBlock(block, { blocks, archiveBlocks: archivedBlocks(paths.archive) })?.issues : void 0) ?? []) {
         warn(`save: warning: ${created.id}: ${issue}`);
       }
       for (const issue of missingVerifyIssues({ exec: decision.exec, verify: decision.verify })) {

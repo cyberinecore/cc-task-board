@@ -2,12 +2,15 @@
 import {
   archiveIdsFor,
   depSatisfied
-} from "./chunk-SH2Y6DI2.mjs";
+} from "./chunk-SKIZJWFT.mjs";
+import {
+  waitsOnOf
+} from "./chunk-7XHG2DEQ.mjs";
 import {
   listJournalDays,
   unreviewedDecisionLines,
   unreviewedDecisions
-} from "./chunk-ODYPGOF4.mjs";
+} from "./chunk-3V2BXNFG.mjs";
 import {
   TASK_ID_RE,
   TASK_STATUS_SET,
@@ -25,7 +28,7 @@ import {
   shadowedHubBoard,
   submoduleScope,
   todayLocalDate
-} from "./chunk-KIJLE46J.mjs";
+} from "./chunk-GIU6R332.mjs";
 
 // src/tasks/boardStatusView.ts
 import { existsSync, readFileSync } from "node:fs";
@@ -91,6 +94,19 @@ function healthLines(view) {
   }
   return health;
 }
+function decideLines(t) {
+  return [
+    ...t.default !== "" && t.default !== "-" ? [`   default: ${t.default}`] : [],
+    ...t.undoCost !== "" && t.undoCost !== "-" ? [`   undo-cost: ${t.undoCost}`] : []
+  ];
+}
+function provenanceSuffix(t) {
+  if (!t.source) return "";
+  return `  [source: ${t.source}${t.verified ? `; verified: ${t.verified}` : ""}]`;
+}
+function withDecide(t, line) {
+  return [`${line}${provenanceSuffix(t)}`, ...decideLines(t)].join("\n");
+}
 function formatRecurringLine(e) {
   if (e.state === "NEW") return `${e.id}  ** DUE ** never run (every ${e.every})  ${e.title}`;
   if (e.state === "DUE") return `${e.id}  ** DUE ** ${e.days}d overdue (every ${e.every})  ${e.title}`;
@@ -118,13 +134,18 @@ function boardView(paths, cwd, showAll) {
     status: effective.get(b.id) ?? b.status ?? "",
     title: b.title,
     blocker: b.fields.get("blocker")?.trim() ?? "",
+    waitsOn: waitsOnOf(b.fields.get("waits-on")),
     reason: b.fields.get("reason")?.trim() ?? "",
     deps: (b.fields.get("deps") ?? "").split(/[,\s]+/).filter((id) => TASK_ID_RE.test(id)),
     duplicateOf: b.fields.get("duplicate-of")?.trim() ?? "",
     path: b.fields.get("path")?.trim() ?? "",
     baseStatus: b.status ?? "",
     created: b.fields.get("created")?.trim() ?? "",
-    exec: b.fields.get("exec")?.trim() ?? ""
+    exec: b.fields.get("exec")?.trim() ?? "",
+    source: b.fields.get("source")?.trim() || null,
+    verified: b.fields.get("verified")?.trim() || null,
+    default: b.fields.get("default")?.trim() ?? "",
+    undoCost: b.fields.get("undo-cost")?.trim() ?? ""
   }));
   const doneIds = archiveIdsFor(paths.manifest);
   for (const t of base) if (t.status === "done") doneIds.add(t.id);
@@ -144,6 +165,7 @@ function boardView(paths, cwd, showAll) {
       eff,
       title: t.title,
       blocker: t.blocker,
+      waitsOn: t.waitsOn,
       reason: t.reason,
       deps: t.deps,
       missing,
@@ -152,7 +174,11 @@ function boardView(paths, cwd, showAll) {
       owner: owners.get(t.id) ?? "",
       epoch: epochs.get(t.id),
       created: t.created,
-      exec: t.exec
+      exec: t.exec,
+      source: t.source,
+      verified: t.verified,
+      default: t.default,
+      undoCost: t.undoCost
     };
   });
   const scope = showAll ? "" : submoduleScope(cwd);
@@ -290,15 +316,15 @@ function boardStatusView(paths, cwd, summary, showAll) {
     if (!entries.length) return;
     lines.push(`[${title}]`, ...entries, "");
   };
-  section("doing", doing.map((t) => `${t.id} [doing] ${t.title}${t.owner ? `  (\xAB${t.owner}\xBB)` : ""}`));
-  section("todo", todo.map((t) => `${t.id} [todo] ${t.title}`));
-  section("waiting on deps", waitingDeps.map((t) => `${t.id} [todo] ${t.title} -- waiting on: ${t.missing.join(", ")}`));
+  section("doing", doing.map((t) => withDecide(t, `${t.id} [doing] ${t.title}${t.owner ? `  (\xAB${t.owner}\xBB)` : ""}`)));
+  section("todo", todo.map((t) => withDecide(t, `${t.id} [todo] ${t.title}`)));
+  section("waiting on deps", waitingDeps.map((t) => withDecide(t, `${t.id} [todo] ${t.title} -- waiting on: ${t.missing.join(", ")}`)));
   section(
     `owner: ${view.ownerActionable.length} actionable, ${view.ownerWaiting.length} waiting`,
-    view.ownerActionable.length ? view.ownerActionable.map((t) => `${t.id} ${t.title}`) : view.ownerWaiting.length ? ["(none actionable now)"] : []
+    view.ownerActionable.length ? view.ownerActionable.map((t) => withDecide(t, `${t.id} ${t.title}`)) : view.ownerWaiting.length ? ["(none actionable now)"] : []
   );
-  section("blocked", blocked.map((t) => `${t.id} [blocked] ${t.title} -- ${t.blocker}`));
-  section("backlog", backlog.map((t) => `${t.id} [backlog] ${t.title}${ready.includes(t) ? "  (ready)" : ""}`));
+  section("blocked", blocked.map((t) => `${t.id} [blocked] ${t.title} -- ${t.blocker}${t.waitsOn ? `  (waits on: ${t.waitsOn})` : ""}${provenanceSuffix(t)}`));
+  section("backlog", backlog.map((t) => withDecide(t, `${t.id} [backlog] ${t.title}${ready.includes(t) ? "  (ready)" : ""}`)));
   section("done", done.map((t) => `${t.id} [done] ${t.title}`));
   const days = recentDoneDays();
   section(`recently done (${days}d, archived included)`, recentDoneTasks(paths, view, days).map((t) => `${t.id} [done ${t.completed}] ${t.title}`));

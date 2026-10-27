@@ -1,8 +1,15 @@
 #!/usr/bin/env node
 import {
+  NOTE_SOURCE_RE,
+  UPDATE_LINE_RE,
+  blockerNamesOwner,
+  isPeerSource,
+  missingDecideFields,
   ownerMixForBlock,
-  ownerMixSectionLines
-} from "./chunk-UV3X3JLP.mjs";
+  ownerMixSectionLines,
+  peerClaimNeedsReview,
+  waitsOnError
+} from "./chunk-7XHG2DEQ.mjs";
 import {
   ID_SHAPE_RULE,
   KNOWN_HEADER_ID_RE,
@@ -14,7 +21,7 @@ import {
   orderOverlayLines,
   overlaySources,
   parseManifestBlocks
-} from "./chunk-KIJLE46J.mjs";
+} from "./chunk-GIU6R332.mjs";
 
 // src/tasks/boardDoctor.ts
 import { existsSync, readFileSync, readdirSync } from "node:fs";
@@ -50,6 +57,21 @@ function missingVerifyIssues(task) {
 
 // src/tasks/boardDoctor.ts
 var LOWER_BOUND_NOTE = "(lower bound -- a malformed header exists and can hide its own collision; fix section 1 first, then re-run)";
+function blockerOwnerProblems(b) {
+  const status = b.status ?? "";
+  if (status !== "todo" && status !== "doing" && status !== "backlog") return [];
+  const dup = b.fields.get("duplicate-of")?.trim() ?? "";
+  if (dup !== "" && dup !== "-") return [];
+  const waits = (b.fields.get("waits-on") ?? "").trim();
+  const blocker = (b.fields.get("blocker") ?? "").trim();
+  const blocked = blocker !== "" && blocker !== "-";
+  if (waits !== "") {
+    const err = waitsOnError(waits);
+    return err === null ? [] : [{ id: b.id, line: line1(b), problem: err }];
+  }
+  if (!blocked || blockerNamesOwner(blocker)) return [];
+  return [{ id: b.id, line: line1(b), problem: `blocked with no waits-on: and no owner named in the blocker text (${blocker.length > 60 ? `${blocker.slice(0, 57)}...` : blocker})` }];
+}
 var HELD_HEADER_RE = /^## ([A-Za-z0-9]+) \[([^\]]*)\](?: |$)/;
 function findHeldFlips(manifestSrc, overlayRaw, now) {
   const last = /* @__PURE__ */ new Map();
@@ -79,6 +101,29 @@ function findHeldFlips(manifestSrc, overlayRaw, now) {
     });
   }
   return held;
+}
+function findPeerClaims(manifestSrc) {
+  if (!manifestSrc) return [];
+  const srcLines = manifestSrc.split("\n");
+  const fenced = fencedLineFlags(srcLines);
+  const found = [];
+  for (const b of parseManifestBlocks(manifestSrc, TASK_ID_RE).blocks) {
+    const source = b.fields.get("source")?.trim() ?? "";
+    if (isPeerSource(source)) {
+      const verified = b.fields.get("verified")?.trim() || null;
+      if (peerClaimNeedsReview(verified)) found.push({ id: b.id, line: line1(b), kind: "task", source, verified });
+    }
+    for (let i = b.start + 1; i < b.end; i++) {
+      if (fenced[i]) continue;
+      const text = srcLines[i];
+      if (!UPDATE_LINE_RE.test(text)) continue;
+      const m = NOTE_SOURCE_RE.exec(text);
+      if (!m) continue;
+      const verified = m[2]?.trim() || null;
+      if (peerClaimNeedsReview(verified)) found.push({ id: b.id, line: i + 1, kind: "note", source: m[1], verified });
+    }
+  }
+  return found;
 }
 function hasBlockingFindings(r) {
   const manifestCount = r.headerCounts.find((c) => c.source === "manifest");
@@ -213,7 +258,14 @@ function analyze(inputs) {
       line: line1(b),
       issues: taskQualityIssues({ do: b.fields.get("do") ?? "", effort: b.fields.get("effort")?.trim(), hasBrief: briefIdSet.has(b.id) })
     })).filter((q) => q.issues.length > 0),
-    ownerMixed: manifestTasks.filter((b) => b.status === "todo" || b.status === "doing" || b.status === "backlog").filter((b) => (b.fields.get("duplicate-of")?.trim() ?? "") === "" || b.fields.get("duplicate-of")?.trim() === "-").map((b) => ownerMixForBlock(b, { blocks: manifestTasks })).filter((e) => e !== null)
+    ownerMixed: manifestTasks.filter((b) => b.status === "todo" || b.status === "doing" || b.status === "backlog").filter((b) => (b.fields.get("duplicate-of")?.trim() ?? "") === "" || b.fields.get("duplicate-of")?.trim() === "-").map((b) => ownerMixForBlock(b, { blocks: manifestTasks, archiveBlocks: archiveTasks })).filter((e) => e !== null),
+    peerClaims: findPeerClaims(inputs.manifestSrc),
+    ownerDecideGaps: manifestTasks.filter((b) => b.status === "todo" || b.status === "doing" || b.status === "backlog").map((b) => ({
+      id: b.id,
+      line: line1(b),
+      missing: missingDecideFields(b.title, { default: b.fields.get("default"), undoCost: b.fields.get("undo-cost") })
+    })).filter((g) => g.missing.length > 0),
+    blockerOwners: manifestTasks.flatMap((b) => blockerOwnerProblems(b))
   };
 }
 function listBriefIds(dir) {
@@ -357,6 +409,23 @@ function formatReport(r) {
   lines.push("");
   lines.push(`11) Owner-mixed tasks: ${r.ownerMixed.length} (advisory -- a warning, never a blocker; never fails this report)`);
   for (const line of ownerMixSectionLines(r.ownerMixed)) lines.push(line);
+  lines.push("");
+  lines.push(`12) Owner: decide tasks without a default or an undo cost: ${r.ownerDecideGaps.length} (advisory -- a warning, never a blocker; never fails this report)`);
+  for (const g of r.ownerDecideGaps) {
+    lines.push(`  line ${g.line} -- ${g.id}: missing ${g.missing.join(" and ")} (/cyberine-taskboard:tasks set ${g.id} ${g.missing.map((m) => m === "default" ? "--default" : "--undo-cost").join(' "<text>" ')} "<text>")`);
+  }
+  lines.push("");
+  lines.push(`13) Peer claims not verified: ${r.peerClaims.length} (advisory -- never fails this report)`);
+  lines.push("  tasks and notes whose source is another session (peer:<session>) and whose verified: is no or missing; check the claim against the repo or the screen, then re-record it with --verified:");
+  if (r.peerClaims.length === 0) lines.push(none);
+  for (const c of r.peerClaims) {
+    lines.push(`  line ${c.line} -- ${c.id} ${c.kind} from ${c.source}: ${c.verified === null ? "no verified: recorded" : "verified: no"}`);
+  }
+  lines.push("");
+  lines.push(`14) Blockers with no named owner: ${r.blockerOwners.length} (advisory -- a warning, never fails this report)`);
+  lines.push('  a blocker that waits on someone outside the run should say who: status block <id> "<reason>" --waits-on user|repo:<path>|session:<name>|upstream:<vendor>|event:<what>');
+  if (r.blockerOwners.length === 0) lines.push(none);
+  for (const e of r.blockerOwners) lines.push(`  line ${e.line} -- ${e.id}: ${e.problem}`);
   return lines.join("\n");
 }
 
@@ -365,6 +434,7 @@ export {
   missingVerifyIssues,
   LOWER_BOUND_NOTE,
   findHeldFlips,
+  findPeerClaims,
   hasBlockingFindings,
   findPrefixPairs,
   scanRawHeaders,

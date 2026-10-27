@@ -1,10 +1,16 @@
 #!/usr/bin/env node
 import {
+  isOwnerDecideTitle,
+  missingDecideFields,
+  sourceIssues,
+  waitsOnError
+} from "./chunk-7XHG2DEQ.mjs";
+import {
   appendJournalEvents,
   lockAndMigrate,
   reconcileLocked,
   unlock
-} from "./chunk-ODYPGOF4.mjs";
+} from "./chunk-3V2BXNFG.mjs";
 import {
   AmbiguousIdError,
   RECURRING_ID_RE,
@@ -33,7 +39,7 @@ import {
   scopeForBoard,
   todayLocalDate,
   writeFileAtomic
-} from "./chunk-KIJLE46J.mjs";
+} from "./chunk-GIU6R332.mjs";
 
 // src/tasks/boardWrite.ts
 import { existsSync as existsSync5, mkdirSync as mkdirSync4, readFileSync as readFileSync5, writeFileSync as writeFileSync2 } from "node:fs";
@@ -59,6 +65,10 @@ function archivedIds(archivePath) {
   return new Set(
     parseManifestBlocks(readFileSync(archivePath, "utf8"), TASK_ID_RE).blocks.map((b) => b.id)
   );
+}
+function archivedBlocks(archivePath) {
+  if (!existsSync(archivePath)) return [];
+  return parseManifestBlocks(readFileSync(archivePath, "utf8"), TASK_ID_RE).blocks;
 }
 function archiveAbortLabel(e, cmd = "archive") {
   const partial = e instanceof ArchivePartialError ? e : null;
@@ -597,10 +607,15 @@ var SCHEMA_TEXT = `/cyberine-taskboard:tasks save -- input shape (--input <file>
       "area": ["auth"],              // optional, default [] -- affinity tag(s), whitespace-free tokens
       "createdBy": "claude-opus-5",  // optional -- model id that authored the task (provenance only)
       "from": "repo 2026-09-06",     // optional -- origin-session provenance
+      "source": "peer:dot-claude_312", // optional -- where the claim behind this task came from: peer:<session> | user | agent
+      "verified": "read src/x.ts:40", // required with a peer: source -- how the claim was checked against the repo or the screen, or "no" when it was not
       "draft": "draft-task-123.md",  // optional -- pending draft basename to consume after apply
       "blocker": null,               // optional -- external blocker reason, or null/omit when none
+      "waitsOn": "user",             // optional -- who a blocker waits on: "user" | "repo:<path>" | "session:<name>" | "upstream:<vendor>" | "event:<what>"; null/omit when none
       "verify": "npm run typecheck", // optional, exec:"agent" -- a command that exits 0 when the task is done; the task then closes only on it (saving an agent task without one prints a warning)
       "why": "...",                  // optional -- one-line rationale kept IN the manifest
+      "default": "...",              // REQUIRED when the title starts "Owner: decide" -- what happens if the owner never answers (one line)
+      "undoCost": "...",             // REQUIRED when the title starts "Owner: decide" -- what it costs to reverse the default or the answer (one line)
       "brief": {                     // REQUIRED -- every section real content; a bare N/A/None/TBD/- is refused, decisions/rejected/gotchas take "None \u2014 <why>"
         "intent": "...", "decisions": "...", "pointers": "...",
         "rejected": "...", "doneWhen": "...", "gotchas": "..."
@@ -715,10 +730,15 @@ function renderBlock(t, refToId, today) {
   if (t.path) lines.push(`path: ${t.path}`);
   if (t.area && t.area.length) lines.push(`area: ${t.area.join(" ")}`);
   if (t.blocker) lines.push(`blocker: ${t.blocker}`);
+  if (t.waitsOn) lines.push(`waits-on: ${t.waitsOn}`);
   if (t.createdBy) lines.push(`created-by: ${t.createdBy}`);
   if (t.from) lines.push(`from: ${t.from}`);
+  if (t.source) lines.push(`source: ${t.source}`);
+  if (t.verified) lines.push(`verified: ${t.verified.trim()}`);
   lines.push(`do: ${t.do.trim()}`);
   lines.push(`done-when: ${t.doneWhen.trim()}`);
+  if (t.default && t.default.trim()) lines.push(`default: ${t.default.trim().replace(/\s+/g, " ")}`);
+  if (t.undoCost && t.undoCost.trim()) lines.push(`undo-cost: ${t.undoCost.trim().replace(/\s+/g, " ")}`);
   if (t.verify && t.verify.trim()) lines.push(`verify: ${t.verify.trim().replace(/\s+/g, " ")}`);
   if (t.why && t.why.trim()) lines.push(`why: ${t.why.trim().replace(/\s+/g, " ")}`);
   const rendered = lines.join("\n");
@@ -782,6 +802,10 @@ function validateDecisions(decisions, requireBrief = false) {
     if (t?.status !== void 0 && !WRITABLE_STATUSES.includes(t.status)) {
       errors.push(`${tag}: "status" must be one of ${WRITABLE_STATUSES.join(" | ")}, got "${String(t.status)}"`);
     }
+    if (t?.waitsOn !== void 0 && t.waitsOn !== null) {
+      const waitsErr = typeof t.waitsOn === "string" ? waitsOnError(t.waitsOn) : "waits-on must be a string";
+      if (waitsErr !== null) errors.push(`${tag}: waitsOn: ${waitsErr}`);
+    }
     for (const field of ["title", "do", "doneWhen", "blocker", "from", "path", "createdBy"]) {
       const v = t?.[field];
       if (typeof v === "string" && /[\r\n]/.test(v)) {
@@ -826,6 +850,7 @@ function validateDecisions(decisions, requireBrief = false) {
     if (t?.from !== void 0 && t.from !== null && typeof t.from !== "string") {
       errors.push(`${tag}: from must be a string (origin-session provenance)`);
     }
+    for (const issue of sourceIssues(t?.source, t?.verified)) errors.push(`${tag}: ${issue}`);
     if (t?.path !== void 0 && t.path !== null) {
       const pathErr = validatePathField(t.path);
       if (pathErr) errors.push(`${tag}: path ${pathErr}`);
@@ -836,6 +861,20 @@ function validateDecisions(decisions, requireBrief = false) {
     if (t?.verify !== void 0 && t.verify !== null) {
       const refusal = typeof t.verify === "string" ? verifyCommandRefusal(t.verify) : "it must be a string";
       if (refusal !== null) errors.push(`${tag}: verify ${refusal}`);
+    }
+    for (const field of ["default", "undoCost"]) {
+      const v = t?.[field];
+      if (v !== void 0 && v !== null && typeof v !== "string") errors.push(`${tag}: ${field} must be a string (one line)`);
+      else if (typeof v === "string" && /[\r\n]/.test(v)) errors.push(`${tag}: "${field}" must be a single line -- it renders as one manifest line`);
+    }
+    if (typeof t?.title === "string") {
+      const missing = missingDecideFields(t.title, {
+        default: typeof t.default === "string" ? t.default : null,
+        undoCost: typeof t.undoCost === "string" ? t.undoCost : null
+      });
+      if (missing.length) {
+        errors.push(`${tag}: an Owner: decide task needs a default and an undo cost -- missing ${missing.map((m) => m === "default" ? '"default" (--default)' : '"undoCost" (--undo-cost)').join(" and ")}`);
+      }
     }
     if (t?.brief === void 0 || t.brief === null) {
       if (requireBrief) errors.push(`${tag}: brief is required`);
@@ -1021,10 +1060,15 @@ var SET_ORDER = [
   "path",
   "area",
   "blocker",
+  "waits-on",
   "created-by",
   "from",
+  "source",
+  "verified",
   "do",
   "done-when",
+  "default",
+  "undo-cost",
   "verify",
   "why"
 ];
@@ -1209,11 +1253,44 @@ function setFields(paths, rawId, changes, reason) {
     const refusal = verifyCommandRefusal(changes.verify);
     if (refusal !== null) throw new BoardRejected(`set: --verify ${JSON.stringify(changes.verify)} refused: ${refusal} (pass "-" to remove it)`);
   }
+  for (const [flag, key] of [["--default", "default"], ["--undo-cost", "undoCost"]]) {
+    const v = changes[key];
+    if (v !== void 0 && v !== "-" && !collapseWhitespace(v)) throw new BoardRejected(`set: ${flag} must not be empty (pass "-" to remove it)`);
+  }
+  const titleAfter = changes.title !== void 0 ? collapseWhitespace(changes.title) : block.title;
+  if (isOwnerDecideTitle(titleAfter)) {
+    for (const [flag, key] of [["--default", "default"], ["--undo-cost", "undoCost"]]) {
+      if (changes[key] === "-") throw new BoardRejected(`set: ${id} is an Owner: decide task -- ${flag} cannot be cleared; replace it with new text instead`);
+    }
+    if (changes.title !== void 0 && !isOwnerDecideTitle(block.title)) {
+      const missing = missingDecideFields(titleAfter, {
+        default: changes.default ?? block.fields.get("default"),
+        undoCost: changes.undoCost ?? block.fields.get("undo-cost")
+      });
+      if (missing.length) {
+        throw new BoardRejected(`set: the new title makes ${id} an Owner: decide task, which needs a default and an undo cost -- add ${missing.map((m) => m === "default" ? "--default" : "--undo-cost").join(" and ")}`);
+      }
+    }
+  }
   if (changes.path !== void 0 && changes.path !== "-") {
     const p = changes.path.trim();
     if (!p || /\s/.test(p) || isAbsolute(p) || p.split(/[\\/]/).includes("..")) {
       throw new BoardRejected(`set: --path must be one relative path inside the board's repository, or "-" to remove it (got ${JSON.stringify(changes.path)})`);
     }
+  }
+  if (changes.waitsOn !== void 0 && changes.waitsOn.trim() !== "-") {
+    const waitsErr = waitsOnError(changes.waitsOn);
+    if (waitsErr !== null) throw new BoardRejected(`set: --waits-on: ${waitsErr}`);
+  }
+  const clearsSource = changes.source !== void 0 && changes.source.trim() === "-";
+  if (clearsSource && changes.verified !== void 0) {
+    throw new BoardRejected("set: --source - clears source and verified together; pass no --verified or --unverified with it");
+  }
+  const sourceAfter = clearsSource ? void 0 : changes.source?.trim() ?? block.fields.get("source");
+  const verifiedAfter = clearsSource ? void 0 : changes.verified ?? (changes.source !== void 0 ? void 0 : block.fields.get("verified"));
+  if (changes.source !== void 0 || changes.verified !== void 0) {
+    const issues = sourceIssues(sourceAfter, verifiedAfter);
+    if (issues.length) throw new BoardRejected(`set: ${issues.join("; ")}`);
   }
   if ((changes.do !== void 0 || changes.doneWhen !== void 0) && !reason) {
     throw new BoardRejected(
@@ -1286,6 +1363,25 @@ function setFields(paths, rawId, changes, reason) {
       journalFields.push({ field: "path", oldV: prev ?? "-", newV: next ?? "-" });
     }
   }
+  if (changes.waitsOn !== void 0) {
+    const prev = currentValue(lines, start, end, "waits-on");
+    const next = changes.waitsOn.trim() === "-" ? null : changes.waitsOn.trim();
+    end = upsertField(lines, start, end, "waits-on", next);
+    if (prev !== next) {
+      report.push(`waits-on ${prev ?? "(none)"} -> ${next ?? "(none)"}`);
+      journalFields.push({ field: "waits-on", oldV: prev ?? "-", newV: next ?? "-" });
+    }
+  }
+  if (changes.source !== void 0 || changes.verified !== void 0) {
+    for (const [field, next] of [["source", sourceAfter ?? null], ["verified", verifiedAfter?.trim() ?? null]]) {
+      const prev = currentValue(lines, start, end, field);
+      end = upsertField(lines, start, end, field, next);
+      if (prev !== next) {
+        report.push(`${field} ${prev ?? "(none)"} -> ${next ?? "(none)"}`);
+        journalFields.push({ field, oldV: prev ?? "-", newV: next ?? "-" });
+      }
+    }
+  }
   if (changes.do !== void 0) {
     const prev = currentValue(lines, start, end, "do");
     const newVal = collapseWhitespace(changes.do);
@@ -1302,6 +1398,17 @@ function setFields(paths, rawId, changes, reason) {
     if (prev !== newVal) {
       report.push(`done-when ${prev ?? "(none)"} -> ${newVal}`);
       journalFields.push({ field: "done-when", oldV: prev ?? "-", newV: newVal });
+    }
+  }
+  for (const [key, field] of [["default", "default"], ["undoCost", "undo-cost"]]) {
+    const v = changes[key];
+    if (v === void 0) continue;
+    const prev = currentValue(lines, start, end, field);
+    const next = v === "-" ? null : collapseWhitespace(v);
+    end = upsertField(lines, start, end, field, next);
+    if (prev !== next) {
+      report.push(`${field} ${prev ?? "(none)"} -> ${next ?? "(none)"}`);
+      journalFields.push({ field, oldV: prev ?? "-", newV: next ?? "-" });
     }
   }
   if (changes.verify !== void 0) {
@@ -1553,7 +1660,7 @@ ${errors.map((e) => `  - ${e}`).join("\n")}`);
     process.exitCode = 1;
   }
 }
-function setBlocker(paths, rawId, reason) {
+function setBlocker(paths, rawId, reason, waitsOn) {
   if (RECURRING_ID_RE.test(rawId)) {
     throw new BoardRejected(
       `blocker: ${rawId} is a recurring block -- blocker only edits task blocks; recurring exec/model tiers live in the R-block itself`
@@ -1586,36 +1693,42 @@ function setBlocker(paths, rawId, reason) {
   if (reason !== null) {
     const collapsed = reason.replace(/\s+/g, " ").trim();
     if (!collapsed) throw new BoardRejected("blocker: reason must be non-empty");
-    upsertField(lines, start, end, "blocker", collapsed);
+    if (waitsOn !== void 0) {
+      const waitsErr = waitsOnError(waitsOn);
+      if (waitsErr !== null) throw new BoardRejected(`blocker: --waits-on: ${waitsErr}`);
+    }
+    const afterBlocker = upsertField(lines, start, end, "blocker", collapsed);
+    if (waitsOn !== void 0) upsertField(lines, start, afterBlocker, "waits-on", waitsOn.trim());
     if (countAllHeaders(lines.join("\n")) !== before) {
       throw new BoardRejected("blocker: refused -- header-count guard failed, manifest left untouched");
     }
     writeFileAtomic(paths.manifest, lines.join("\n"), "blocker");
-    return `${id} blocker set: ${collapsed}`;
+    return `${id} blocker set: ${collapsed}${waitsOn !== void 0 ? ` (waits on ${waitsOn.trim()})` : ""}`;
   }
-  if (currentValue(lines, start, end, "blocker") === null) {
+  if (currentValue(lines, start, end, "blocker") === null && currentValue(lines, start, end, "waits-on") === null) {
     throw new BoardRejected(`blocker: ${id} has no blocker: line -- nothing to unblock`);
   }
-  upsertField(lines, start, end, "blocker", null);
+  const afterUnblock = upsertField(lines, start, end, "blocker", null);
+  upsertField(lines, start, afterUnblock, "waits-on", null);
   if (countAllHeaders(lines.join("\n")) !== before) {
     throw new BoardRejected("blocker: refused -- header-count guard failed, manifest left untouched");
   }
   writeFileAtomic(paths.manifest, lines.join("\n"), "blocker");
   return `${id} blocker cleared`;
 }
-function blockTaskUnderLock(startDir, rawId, reason) {
+function blockTaskUnderLock(startDir, rawId, reason, waitsOn) {
   const paths = resolveBoard(startDir);
   if (!lockAndMigrate(paths.lock, paths.manifest)) {
     throw new BoardRejected(`blocker: reconcile lock busy -- ${rawId} left without a blocker`);
   }
   try {
-    return setBlocker(paths, rawId, reason);
+    return setBlocker(paths, rawId, reason, waitsOn);
   } finally {
     unlock(paths.lock);
   }
 }
 var DEPS_LINE_RE = /^deps:(\s|$)/;
-var MERGED_DUP_DROP_RE = /^(duplicate-of|blocker):(\s|$)/;
+var MERGED_DUP_DROP_RE = /^(duplicate-of|blocker|waits-on):(\s|$)/;
 function readManifestLines(manifest) {
   const src = readFileSync5(manifest, "utf8");
   const raw = src.split("\n");
@@ -1887,6 +2000,7 @@ function logDone(paths, descs, by) {
 export {
   ArchivePartialError,
   archivedIds,
+  archivedBlocks,
   archiveAbortLabel,
   archiveLocked,
   readLedger,

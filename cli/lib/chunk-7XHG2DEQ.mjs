@@ -1,5 +1,61 @@
 #!/usr/bin/env node
 
+// src/tasks/boardSource.ts
+var SOURCE_RE = /^(?:user|agent|peer:[A-Za-z0-9][A-Za-z0-9._@-]*)$/;
+var UNVERIFIED = "no";
+var SOURCE_SHAPE_HINT = "peer:<session> | user | agent";
+function isPeerSource(source) {
+  return typeof source === "string" && source.startsWith("peer:");
+}
+function isUnverified(verified) {
+  return typeof verified === "string" && verified.trim().toLowerCase() === UNVERIFIED;
+}
+function sourceIssues(source, verified) {
+  const issues = [];
+  const hasSource = source !== void 0 && source !== null;
+  const hasVerified = verified !== void 0 && verified !== null;
+  if (hasSource && (typeof source !== "string" || !SOURCE_RE.test(source))) {
+    issues.push(`source ${JSON.stringify(source)} is not valid -- use ${SOURCE_SHAPE_HINT} (a peer session name has letters, digits, . _ @ -)`);
+  }
+  if (hasVerified) {
+    if (typeof verified !== "string" || verified.trim() === "") {
+      issues.push('verified must be a non-empty string: how the claim was checked, or "no"');
+    } else if (/[\r\n]/.test(verified)) {
+      issues.push("verified must be a single line");
+    }
+  }
+  if (!hasSource && hasVerified) issues.push("verified needs a source -- it records how that source's claim was checked");
+  if (hasSource && typeof source === "string" && isPeerSource(source) && !hasVerified) {
+    issues.push(`a peer source needs verified: how the claim was checked against the repo or the screen, or "${UNVERIFIED}" when it was not`);
+  }
+  return issues;
+}
+function resolveProvenance(flags) {
+  const errors = [];
+  if (flags.verified !== void 0 && flags.unverified) {
+    errors.push("--verified and --unverified are mutually exclusive");
+  }
+  if (flags.verified !== void 0 && isUnverified(flags.verified)) {
+    errors.push('--verified "no" is the unverified marker -- pass --unverified instead');
+  }
+  const verified = flags.unverified ? UNVERIFIED : flags.verified;
+  if (errors.length === 0) errors.push(...sourceIssues(flags.source, verified));
+  return {
+    ...flags.source !== void 0 && { source: flags.source },
+    ...verified !== void 0 && { verified },
+    errors
+  };
+}
+function noteSuffix(source, verified) {
+  if (source === void 0) return "";
+  return ` [source: ${source}${verified !== void 0 ? `; verified: ${verified}` : ""}]`;
+}
+var NOTE_SOURCE_RE = /\[source: (peer:[^;\]\s]+)(?:; verified: (.*))?\]\s*$/;
+var UPDATE_LINE_RE = /^update (\d{4}-\d{2}-\d{2}): /;
+function peerClaimNeedsReview(verified) {
+  return verified === null || verified.trim() === "" || isUnverified(verified);
+}
+
 // src/tasks/ownerMix.ts
 var OWNER_TITLE_RE = /^\s*Owner:/i;
 var DECIDE_RE = /\b(decid\w*|decision|choose|pick a|pick one|rule on|ruling|settle|sign-?off|keep or|which of)\b/i;
@@ -14,6 +70,22 @@ function classifyOwnerNeed(text) {
   const operator = OPERATOR_RE.exec(text);
   if (operator) return { class: "operator-action", match: operator[0].trim() };
   return null;
+}
+var OWNER_DECIDE_TITLE_RE = /^\s*Owner:\s*decide\b/i;
+function isOwnerDecideTitle(title) {
+  if (OWNER_DECIDE_TITLE_RE.test(title)) return true;
+  return OWNER_TITLE_RE.test(title) && classifyOwnerNeed(title)?.class === "decide";
+}
+function presentField(value) {
+  const v = value?.trim() ?? "";
+  return v !== "" && v !== "-";
+}
+function missingDecideFields(title, fields) {
+  if (!isOwnerDecideTitle(title)) return [];
+  const missing = [];
+  if (!presentField(fields.default)) missing.push("default");
+  if (!presentField(fields.undoCost)) missing.push("undo-cost");
+  return missing;
 }
 var OWNER_PARTY_RE = /\b(?:owner|operator|stakeholder)(?:'s|s')?\b/i;
 var CODE_BEFORE_RE = /\b(?:validat\w*|pars\w*|redact\w*|mask\w*|scrub\w*|sanitiz\w*|detect\w*|lint\w*|format\w*|handl\w*|mock\w*|stub\w*|fake\w*|load\w*|read\w*|resolv\w*|encrypt\w*|hash\w*|stor(?:e|es|ing)|test\w*|fixture\w*|into|extend\w*|separat\w*|record\w*|track\w*|attribut\w*)\b[^,;]*$/i;
@@ -120,22 +192,24 @@ function ownerMixIssueLines(id, findings) {
 function ownerMixLine(id, issue) {
   return `  ${id}  ${issue}`;
 }
-var OWNER_TASK_PROVISION_RE = /\bfund\w*|\w*api[_ -]?key\b|\.env\b/i;
-var OPEN_OWNER_STATUSES = /* @__PURE__ */ new Set(["backlog", "todo", "doing", "blocked"]);
 function depIds(b) {
   return (b.fields.get("deps") ?? "").split(/[,\s]+/).filter((s) => s !== "" && s !== "-");
 }
-function ownerTaskClasses(b) {
-  const text = `${b.title.replace(OWNER_TITLE_RE, "")} ${b.fields.get("do") ?? ""}`;
-  const out = /* @__PURE__ */ new Set();
-  if (DECIDE_RE.test(text)) out.add("decide");
-  if (PROVISION_RE.test(text) || OWNER_TASK_PROVISION_RE.test(text)) out.add("provision");
-  if (OPERATOR_PHRASE_RE.test(text)) out.add("operator-action");
-  return out;
+function isOwnerTaskBlock(b) {
+  if (OWNER_TITLE_RE.test(b.title)) return true;
+  if ((b.fields.get("exec")?.trim() ?? "") !== "manual") return false;
+  return !ownerMixFindings({
+    title: b.title,
+    exec: "manual",
+    do: b.fields.get("do") ?? "",
+    doneWhen: b.fields.get("done-when"),
+    blocker: b.fields.get("blocker")
+  }).some((f) => f.kind === "manual-bundles-agent");
 }
-function coveredByOpenOwnerDep(b, cls, ctx) {
-  const byId = new Map(ctx.blocks.map((x) => [x.id, x]));
-  const isOpen = (x) => OPEN_OWNER_STATUSES.has((ctx.statusOf ? ctx.statusOf(x.id) : x.status) ?? "");
+function carriesOwnerPart(b, ctx) {
+  const byId = /* @__PURE__ */ new Map();
+  for (const x of ctx.archiveBlocks ?? []) byId.set(x.id, x);
+  for (const x of ctx.blocks) byId.set(x.id, x);
   const seen = /* @__PURE__ */ new Set([b.id]);
   const queue = depIds(b);
   while (queue.length > 0) {
@@ -143,9 +217,8 @@ function coveredByOpenOwnerDep(b, cls, ctx) {
     if (seen.has(id)) continue;
     seen.add(id);
     const dep = byId.get(id);
-    if (dep === void 0 || !isOpen(dep)) continue;
-    const isOwnerTask = OWNER_TITLE_RE.test(dep.title) && (dep.fields.get("exec")?.trim() ?? "") === "manual";
-    if (isOwnerTask && ownerTaskClasses(dep).has(cls)) return true;
+    if (dep === void 0) continue;
+    if (isOwnerTaskBlock(dep)) return true;
     queue.push(...depIds(dep));
   }
   return false;
@@ -158,9 +231,8 @@ function ownerMixForBlock(b, ctx) {
     doneWhen: b.fields.get("done-when"),
     blocker: b.fields.get("blocker")
   };
-  const findings = ownerMixFindings(input).filter(
-    (f) => !(ctx !== void 0 && f.kind === "agent-needs-owner" && f.class !== null && coveredByOpenOwnerDep(b, f.class, ctx))
-  );
+  const covered = ctx !== void 0 && carriesOwnerPart(b, ctx);
+  const findings = ownerMixFindings(input).filter((f) => !(covered && f.kind === "agent-needs-owner"));
   const issues = ownerMixIssueLines(b.id, findings);
   return issues.length > 0 ? { id: b.id, issues } : null;
 }
@@ -170,9 +242,75 @@ function ownerMixSectionLines(entries) {
   return lines;
 }
 
+// src/tasks/boardWaitsOn.ts
+var WAITS_ON_SHAPE = "user | repo:<path> | session:<name> | upstream:<vendor> | event:<what>";
+var SESSION_NAME_RE = /^[A-Za-z0-9][A-Za-z0-9._@:-]*$/;
+function hasControlChar(text) {
+  for (const ch of text) {
+    const code = ch.charCodeAt(0);
+    if (code < 32 || code === 127) return true;
+  }
+  return false;
+}
+function waitsOnError(raw) {
+  const v = raw.trim();
+  if (v === "") return `waits-on must not be empty (use ${WAITS_ON_SHAPE}, or "-" to clear it)`;
+  if (v === "user") return null;
+  if (v.startsWith("repo:")) {
+    const path = v.slice("repo:".length);
+    if (path.trim() === "" || path !== path.trim() || hasControlChar(path)) {
+      return `waits-on "${v}": repo: needs one non-empty path on a single line, with no leading or trailing space`;
+    }
+    return null;
+  }
+  if (v.startsWith("session:")) {
+    const name = v.slice("session:".length);
+    if (!SESSION_NAME_RE.test(name)) {
+      return `waits-on "${v}": session: needs a name of letters, digits, ".", "_", "-", "@" or ":", starting with a letter or digit`;
+    }
+    return null;
+  }
+  if (v.startsWith("upstream:")) {
+    const vendor = v.slice("upstream:".length);
+    if (!SESSION_NAME_RE.test(vendor)) {
+      return `waits-on "${v}": upstream: needs a vendor name of letters, digits, ".", "_", "-", "@" or ":", starting with a letter or digit`;
+    }
+    return null;
+  }
+  if (v.startsWith("event:")) {
+    const what = v.slice("event:".length);
+    if (what.trim() === "" || what !== what.trim() || hasControlChar(what)) {
+      return `waits-on "${v}": event: needs one non-empty description on a single line, with no leading or trailing space`;
+    }
+    return null;
+  }
+  return `waits-on "${v}" is not one of ${WAITS_ON_SHAPE}`;
+}
+var OWNER_NAMED_RE = /(?:^|[^A-Za-z0-9_])(?:user|owner|operator|human|waits-on)(?![A-Za-z0-9_])|(?:^|[^A-Za-z0-9_])(?:repo|session):\S/i;
+function blockerNamesOwner(blocker) {
+  return OWNER_NAMED_RE.test(blocker);
+}
+function waitsOnOf(raw) {
+  const v = (raw ?? "").trim();
+  return v === "" || v === "-" ? "" : v;
+}
+
 export {
+  isPeerSource,
+  sourceIssues,
+  resolveProvenance,
+  noteSuffix,
+  NOTE_SOURCE_RE,
+  UPDATE_LINE_RE,
+  peerClaimNeedsReview,
   OWNER_TITLE_RE,
   classifyOwnerNeed,
+  isOwnerDecideTitle,
+  missingDecideFields,
   ownerMixForBlock,
-  ownerMixSectionLines
+  ownerMixSectionLines,
+  WAITS_ON_SHAPE,
+  waitsOnError,
+  blockerNamesOwner,
+  waitsOnOf
 };

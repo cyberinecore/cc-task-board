@@ -2,6 +2,14 @@
 
 All notable changes to Cyberine TaskBoard. Versions follow `version` in `.claude-plugin/plugin.json`; each release is tagged `cyberine-taskboard--v<version>`.
 
+## [0.4.0] - 2026-10-27
+
+- Re-vendored from the upstream board source at 213987e4. A board written by a newer writer no longer prints "manifest lines carry unknown fields" on every command: the CLI now reads `waits-on`, `default`, `undo-cost`, `source` and `verified`.
+- A blocked task can say who it waits on: you, another repository, another session, an outside vendor or an event (`waits-on`). Blocking a task records it, unblocking clears it, and the status views and the doctor show it.
+- An "Owner: decide ..." task now carries the default that applies if you never answer and what undoing it would cost. Saving one without both is refused with nothing written, and the doctor flags older owner-decide tasks that have neither.
+- A task or note that records a claim from another session names its source and how the claim was checked, or marks it unverified; the doctor lists unverified claims from other sessions.
+- A task that depends on owner work no longer gets flagged as mixing owner and agent work in the board cleanup pass.
+
 ## [0.3.2] - 2026-10-26
 
 - Re-vendored from the upstream board source at 318d5de5. The CLI is split into smaller files (`cli/tasks.mjs` is now 196,617 bytes, down from 242,698), which leaves wide headroom under the directory's 256 KiB per-file inspection limit.

@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 // <define:__TASKBOARD_BUILD__>
-var define_TASKBOARD_BUILD_default = { version: "0.3.2", source: "318d5de5", program: "/cyberine-taskboard:tasks" };
+var define_TASKBOARD_BUILD_default = { version: "0.4.0", source: "213987e4", program: "/cyberine-taskboard:tasks" };
 
 // src/tasks/boardEnv.ts
 var BOARD_ENV_NAMES = [
@@ -549,8 +549,11 @@ var KNOWN_TASK_FIELDS = [
   "created-by",
   "from",
   "blocker",
+  "waits-on",
   "do",
   "done-when",
+  "default",
+  "undo-cost",
   "verify",
   "why",
   "every",
@@ -559,9 +562,11 @@ var KNOWN_TASK_FIELDS = [
   "evidence",
   "duplicate-of",
   "completed",
-  "lease"
+  "lease",
+  "source",
+  "verified"
 ];
-var FOREIGN_TO_UPSTREAM_FIELDS = ["effort"];
+var FOREIGN_TO_UPSTREAM_FIELDS = ["effort", "source", "verified"];
 var VENDOR_FIELD_PREFIX = "x-";
 var FIELD_LINE_RE = /^([a-z][a-z-]*):\s?(.*)$/;
 var FUSED_FIELD_RE = new RegExp(

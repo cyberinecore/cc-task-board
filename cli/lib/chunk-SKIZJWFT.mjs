@@ -2,7 +2,7 @@
 import {
   archivedIds,
   resolveDuplicateOf
-} from "./chunk-66MJ3JXB.mjs";
+} from "./chunk-T636BNCF.mjs";
 import {
   TASK_STATUSES,
   danglingTaskPath,
@@ -10,7 +10,7 @@ import {
   pathInScope,
   repoRoot,
   submoduleScope
-} from "./chunk-KIJLE46J.mjs";
+} from "./chunk-GIU6R332.mjs";
 
 // src/tasks/runnable.ts
 import { dirname, join } from "node:path";
@@ -151,6 +151,13 @@ function stuckReason(sets) {
   if (sets.blocked.length > 0) parts.push(`${sets.blocked.length} waiting on deps (finish them or mark them done)`);
   return `${parts.join("; ")}.`;
 }
+function externalBlockerLines(sets) {
+  const out = ["Blocked by an external blocker (release with `/cyberine-taskboard:tasks status unblock <id>`):"];
+  for (const t of sets.waiting) {
+    out.push(`  ${t.id}  ${t.title}  -- blocker: ${t.blocker || "(unspecified)"}${t.waitsOn ? `  (waits on: ${t.waitsOn})` : ""}`);
+  }
+  return out;
+}
 function formatRunnableSummary(sets, opts) {
   const take = opts?.take;
   const claimed = take === void 0 ? sets.runnable : sets.runnable.slice(0, take);
@@ -165,13 +172,17 @@ function formatRunnableSummary(sets, opts) {
       reason = "all runnable tasks already in-progress or done.";
     else reason = "no todo tasks in manifest.";
     lines.push(`(nothing runnable \u2014 ${reason})`);
+    if (sets.waiting.length > 0) {
+      lines.push("");
+      lines.push(...externalBlockerLines(sets));
+    }
     return lines.join("\n");
   }
   lines.push("Runnable (next to dispatch):");
   for (const t of claimed) {
     let entry = `  ${t.id}  ${t.title}`;
     if (t.deps.length > 0) entry += `  [deps: ${formatDepsList(t, sets.doneIds, sets.dupMap)}]`;
-    if (t.blocker) entry += `  [blocker: ${t.blocker}]`;
+    if (t.blocker) entry += `  [blocker: ${t.blocker}${t.waitsOn ? `; waits on: ${t.waitsOn}` : ""}]`;
     lines.push(entry);
   }
   if (leftForOthers.length > 0) {
@@ -180,10 +191,7 @@ function formatRunnableSummary(sets, opts) {
   }
   if (sets.waiting.length > 0) {
     lines.push("");
-    lines.push("Blocked by an external blocker (release with `/cyberine-taskboard:tasks status unblock <id>`):");
-    for (const t of sets.waiting) {
-      lines.push(`  ${t.id}  ${t.title}  -- blocker: ${t.blocker || "(unspecified)"}`);
-    }
+    lines.push(...externalBlockerLines(sets));
   }
   if (sets.blocked.length > 0) {
     lines.push("");

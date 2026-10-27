@@ -79,7 +79,7 @@ cat <<'JSON' | node "${CLAUDE_PLUGIN_ROOT}/cli/tasks.mjs" save --input -
 JSON
 ```
 
-All-or-nothing: any error means nothing is written. Per task: a unique `ref`, a single-line `title`, `do` and `doneWhen`, `effort` (`S`, `M` or `L`), and the `brief`. `status` is `todo` (the default) or `backlog`; a new task is never born `doing`, `done` or `forbidden`. Leave `exec`, `model`, `reasoning` and `priority` out unless the user named one: the CLI fills its own defaults (`exec: agent`, `model: sonnet`, priority `p1`), so the same intent gives the same bytes whichever plugin wrote it. Trust `--schema` over this page. Report the created titles with their new ids.
+All-or-nothing: any error means nothing is written. Per task: a unique `ref`, a single-line `title`, `do` and `doneWhen`, `effort` (`S`, `M` or `L`), and the `brief`. `status` is `todo` (the default) or `backlog`; a new task is never born `doing`, `done` or `forbidden`. Leave `exec`, `model`, `reasoning` and `priority` out unless the user named one: the CLI fills its own defaults (`exec: agent`, `model: sonnet`, priority `p1`), so the same intent gives the same bytes whichever plugin wrote it. An "Owner: decide ..." task also needs `default` (what happens if the owner never answers) and `undoCost` (what reversing the default or the answer costs), each one line; the save is refused, and nothing is written, when either is missing. `tasks add` takes them as `--default` and `--undo-cost`, `tasks set` can replace but not clear them, and `tasks doctor` warns on an older owner-decide task that has neither. Trust `--schema` over this page. Report the created titles with their new ids.
 
 ## Closing a task
 

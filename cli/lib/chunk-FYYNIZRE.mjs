@@ -1,22 +1,23 @@
 #!/usr/bin/env node
 import {
-  OWNER_TITLE_RE,
-  classifyOwnerNeed,
-  ownerMixForBlock,
-  ownerMixSectionLines
-} from "./chunk-UV3X3JLP.mjs";
-import {
+  archivedBlocks,
   archivedIds,
   mergeIds,
   readLedger,
   setDeps
-} from "./chunk-66MJ3JXB.mjs";
+} from "./chunk-T636BNCF.mjs";
+import {
+  OWNER_TITLE_RE,
+  classifyOwnerNeed,
+  ownerMixForBlock,
+  ownerMixSectionLines
+} from "./chunk-7XHG2DEQ.mjs";
 import {
   lockAndMigrate,
   planReconcile,
   reconcileLocked,
   unlock
-} from "./chunk-ODYPGOF4.mjs";
+} from "./chunk-3V2BXNFG.mjs";
 import {
   TASK_ID_RE,
   TASK_ID_SOURCE,
@@ -27,7 +28,7 @@ import {
   parseManifestBlocks,
   readOverlayText,
   writeFileAtomic
-} from "./chunk-KIJLE46J.mjs";
+} from "./chunk-GIU6R332.mjs";
 
 // src/tasks/boardHygiene.ts
 import { existsSync, readFileSync as readFileSync2 } from "node:fs";
@@ -449,9 +450,9 @@ function buriedDecisions(ctx) {
   }
   return out;
 }
-function ownerMixed(ctx) {
+function ownerMixed(paths, ctx) {
   const out = [];
-  const mixCtx = { blocks: ctx.blocks, statusOf: (id) => ctx.effective.get(id) };
+  const mixCtx = { blocks: ctx.blocks, archiveBlocks: archivedBlocks(paths.archive) };
   for (const b of liveBlocks(ctx)) {
     const entry = ownerMixForBlock(b, mixCtx);
     if (entry !== null) out.push(entry);
@@ -484,7 +485,7 @@ function analyzeHygiene(paths) {
     deadDeps: deadDeps(paths, ctx),
     duplicates: duplicates(paths, ctx),
     buriedDecisions: buriedDecisions(ctx),
-    ownerMixed: ownerMixed(ctx),
+    ownerMixed: ownerMixed(paths, ctx),
     pathFindings: pathFindings(paths, ctx)
   };
 }
