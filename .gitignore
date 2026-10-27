@@ -2,6 +2,7 @@
 .playwright-mcp/
 /artifacts/
 CLAUDE.local.md
+.claude/CLAUDE.md
 .claude/settings.local.json
 .claude/worktrees/
 .claude/scratch*/
